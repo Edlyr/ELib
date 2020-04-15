@@ -3,9 +3,8 @@ module ELib.Connectedness.Properties where
 
 open import ELib.Connectedness.Base public
 open import Cubical.Foundations.Everything
-open import Cubical.HITs.PropositionalTruncation
+open import Cubical.HITs.PropositionalTruncation renaming (elim to elimPropTrunc)
 open import Cubical.Data.Sigma
-open import Cubical.Data.Prod using () renaming (_×Σ_ to _×_)
 open import Cubical.Data.Nat
 
 private
@@ -23,10 +22,10 @@ truncCompPath p q = elimPropTrunc (λ _ → propTruncIsProp) (λ p' → elimProp
 --------------------------
 
 isPropIsConnected : isProp (isConnected A)
-isPropIsConnected = isPropPi λ _ → isPropPi λ _ → propTruncIsProp
+isPropIsConnected = isPropΠ λ _ → isPropΠ λ _ → propTruncIsProp
 
 isPropIsPointConnected : (a : A) → isProp ((x : A) → ∥ a ≡ x ∥)
-isPropIsPointConnected a = isPropPi λ _ → propTruncIsProp
+isPropIsPointConnected a = isPropΠ λ _ → propTruncIsProp
 
 pointed×connected→pointConnected : (A × isConnected A) → isPointConnected A
 pointed×connected→pointConnected = λ (a , f) → a , λ x → f a x
