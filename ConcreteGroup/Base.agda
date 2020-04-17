@@ -7,6 +7,7 @@ open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ;
 open import Cubical.HITs.SetTruncation renaming (rec to recSetTrunc)
 open import Cubical.Data.Sigma
 open import Cubical.Functions.FunExtEquiv
+open import Cubical.Functions.Embedding
 open import ELib.Connectedness.Base
 open import ELib.Connectedness.Properties
 
@@ -22,6 +23,9 @@ record ConcreteGroupStruct {ℓ} (A : Type ℓ) : Type ℓ where
 
   isGrpd : isGroupoid A
   isGrpd x y = recPropTrunc isPropIsSet (λ px → recPropTrunc isPropIsSet (λ py → transport (λ i → isSet(px i ≡ py i)) (grpd)) (conn y)) (conn x)
+
+  loopSpace : Type ℓ
+  loopSpace = pnt ≡ pnt
 
 record ConcreteGroup {ℓ} : Type (ℓ-suc ℓ) where
   constructor conc-group
@@ -93,4 +97,24 @@ lemma𝓩SetFibers {ℓ} G x = recPropTrunc isPropIsSet (λ p → transport (λ 
                          path = λ i → ϕ (q (~ i)) ≡ ψ (q (~ i)) in
                      let fin : path ∙ refl ∙ path ⁻¹ ≡ refl
                          fin = cong (λ x → path ∙ x) (sym (lUnit _)) ∙ lCancel _ in λ i → PathP (λ j → fin i j) (λ i → π i x) (λ i → π' i x)) (compPathP (cong (eval π) (sym q)) (compPathP p (cong (eval π') q)))) (conn x))
-  
+
+cong𝓩 : ∀ {ℓ} (G : ConcreteGroup {ℓ}) → ConcreteGroup.loopSpace (Z G) → ConcreteGroup.loopSpace G
+cong𝓩 G = cong (fst (𝓩 G))
+
+cong𝓩inj : ∀ {ℓ} (G : ConcreteGroup {ℓ}) → isEmbedding(cong𝓩 G)
+cong𝓩inj G' = injEmbedding (ZG.isGrpd _ _) (G.isGrpd _ _) λ {x} {y} p → truc1 _ _
+  let test = lemma (x ∙ y ⁻¹) (cong𝓩 G' (x ∙ y ⁻¹) ≡⟨ cong-∙ (fst (𝓩 G')) x (y ⁻¹) ⟩ (cong𝓩 G' x ∙ (cong𝓩 G' (sym y))) ≡⟨ truc2 _ _ p ⟩ refl ∎) in
+  let machin : test ≡ refl
+      machin = (lemma𝓩SetFibers G' G.pnt _ _ _ _) in
+      fst (pathSigma→sigmaPath _ _ (cong (pathSigma→sigmaPath _ _) machin)) where
+  module G = ConcreteGroup G'
+  module ZG = ConcreteGroup (Z G')
+
+  truc1 : ∀ {ℓ} {A : Type ℓ} {a b : A} (p q : a ≡ b) → (p ∙ q ⁻¹) ≡ refl → p ≡ q
+  truc1 p q r = rUnit _ ∙ (cong (λ x → p ∙ x) (sym (lCancel q))) ∙ assoc _ _ _ ∙ cong (λ x → x ∙ q) r ∙ sym (lUnit _)
+
+  truc2 : ∀ {ℓ} {A : Type ℓ} {a b : A} (p q : a ≡ b) → p ≡ q → (p ∙ q ⁻¹) ≡ refl
+  truc2 p q r = cong (λ x → x ∙ q ⁻¹)  r ∙ (rCancel _)
+
+  lemma : (x : ZG.loopSpace) → (cong𝓩 G' x ≡ refl) → (Path (fiber (fst (𝓩 G')) G.pnt) (ZG.pnt , refl) (ZG.pnt , refl))
+  lemma x p = ΣPathP (x , transport (sym (PathP≡compPathL _ _ _)) (sym (rUnit _) ∙ cong sym p))
