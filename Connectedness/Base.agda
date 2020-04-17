@@ -18,6 +18,4 @@ isPointConnected : Type ℓ → Type ℓ
 isPointConnected A = Σ[ a ∈ A ] ((x : A) → ∥ a ≡ x ∥)
 
 connectedComponent : (A : Pointed ℓ) → Pointed ℓ
-connectedComponent A = (Σ[ x ∈ B ] ∥ x ≡ b ∥) , (b , ∣ refl ∣) where
-  B = fst A
-  b = snd A
+connectedComponent A = (Σ[ x ∈ fst A ] ∥ x ≡ snd A ∥) , (snd A , ∣ refl ∣)
