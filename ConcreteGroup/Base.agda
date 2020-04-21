@@ -52,6 +52,26 @@ isAbelian G = (x y : pnt ≡ pnt) → (x ∙ y) ≡ (y ∙ x) where open Concret
 isPropIsAbelian : ∀ {ℓ} (G : ConcreteGroup ℓ) → isProp (isAbelian G)
 isPropIsAbelian G = isPropΠ2 λ _ _ → isGrpd _ _ _ _ where open ConcreteGroup G
 
+-- Group isomorphism
+uaGroup : ∀ {ℓ} (G H : ConcreteGroup ℓ) → (f : CG.type G ≃ CG.type H) → (fst f (CG.pnt G) ≡ CG.pnt H) → G ≡ H
+uaGroup G H f p i = conc-group (ua f i) (struct-conc-group
+  (toPathP {A = λ i → ua f i} {x = CG.pnt G} {y = CG.pnt H} (uaβ f (CG.pnt G) ∙ p) i)
+  (toPathP {A = λ i → (x : ua f i) → ∥ toPathP {A = λ i → ua f i} {x = CG.pnt G} (transportRefl (f .fst (CG.pnt G)) ∙ p) i ≡ x ∥} {x = CG.conn G} {y = CG.conn H}
+    ((isPropΠ (λ _ → propTruncIsProp)) _ _) i)
+  (toPathP {A = λ i → (x y
+        : toPathP {A = λ i → ua f i} {x = CG.pnt G} {y = CG.pnt H}
+          (transportRefl
+           (f .fst (ConcreteGroupStruct.pnt (ConcreteGroup.struct G)))
+           ∙ p)
+          i
+          ≡
+          toPathP {A = λ i → ua f i} {x = CG.pnt G} {y = CG.pnt H}
+          (transportRefl
+           (f .fst (ConcreteGroupStruct.pnt (ConcreteGroup.struct G)))
+           ∙ p)
+          i) →
+       isProp (x ≡ y)} {x = CG.grpd G} {y = CG.grpd H} (isPropIsSet _ _) i))
+
 -- Concrete definition of the center of a group
 Z : ∀ {ℓ} → ConcreteGroup ℓ → ConcreteGroup ℓ
 Z G = Aut {A = (type ≃ type)} (idEquiv _) (isOfHLevel≃ 3 isGrpd isGrpd) where
@@ -294,6 +314,10 @@ isAbelian' G = isEquiv(fst (𝓩 G))
 
 isPropIsAbelian' : ∀ {ℓ} → (G : ConcreteGroup ℓ) → isProp (isAbelian' G)
 isPropIsAbelian' G = isPropIsEquiv _
+
+isAbelian'→isAbelian : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian' G → isAbelian G
+isAbelian'→isAbelian {ℓ} G p = transport (cong isAbelian (uaGroup (Z G) G (fst (𝓩 G) , p) (snd (𝓩 G)))) (isAbelianZ G)
+
 {-
 isAbelian→isAbelian' : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian G → isAbelian' G
 isAbelian→isAbelian' Ggrp Gab .equiv-proof y = recPropTrunc isPropIsContr (λ p → transport (λ i → isContr (fiber (fst (𝓩 Ggrp)) (p i)))
