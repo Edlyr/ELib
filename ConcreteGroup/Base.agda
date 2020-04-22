@@ -52,6 +52,9 @@ isAbelian G = (x y : pnt ≡ pnt) → (x ∙ y) ≡ (y ∙ x) where open Concret
 isPropIsAbelian : ∀ {ℓ} (G : ConcreteGroup ℓ) → isProp (isAbelian G)
 isPropIsAbelian G = isPropΠ2 λ _ _ → isGrpd _ _ _ _ where open ConcreteGroup G
 
+AbConcreteGroup : ∀ {ℓ} → Type (ℓ-suc ℓ)
+AbConcreteGroup {ℓ} = Σ (ConcreteGroup ℓ) isAbelian
+
 -- Group isomorphism
 uaGroup : ∀ {ℓ} (G H : ConcreteGroup ℓ) → (f : CG.type G ≃ CG.type H) → (fst f (CG.pnt G) ≡ CG.pnt H) → G ≡ H
 uaGroup G H f p i = conc-group (ua f i) (struct-conc-group
