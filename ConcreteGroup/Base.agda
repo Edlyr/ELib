@@ -39,7 +39,8 @@ record ConcreteGroup ℓ : Type (ℓ-suc ℓ) where
   Ptd : Pointed ℓ
   Ptd = (type , pnt)
 
-module CG = ConcreteGroup
+private
+  module CG = ConcreteGroup
 
 -- Group of automorphisms of a point "a" in a type "A"
 Aut : ∀ {ℓ} {A : Type ℓ} (a : A) → isGroupoid A → ConcreteGroup ℓ
