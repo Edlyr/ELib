@@ -93,3 +93,8 @@ homInv : {ℓ ℓ' : Level} (G : Group ℓ) (H : Group ℓ')
 homInv Ggrp Hgrp f x = H.invUniqueL _ _ (sym (snd f (G.inv x) x) ∙ cong (fst f) (G.lCancel x) ∙ homId Ggrp Hgrp f ) where
   module G = Group Ggrp
   module H = Group Hgrp
+------------------
+--open import Cubical.Foundations.Everything
+
+--G-Setᵃᵇˢ : ∀ {ℓ} → Group ℓ → Type (ℓ-suc ℓ)
+--G-Setᵃᵇˢ {ℓ} Ggrp = Σ[ χ ∈ (hSet ℓ) ] Hom Ggrp {!!}
