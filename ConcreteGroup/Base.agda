@@ -8,6 +8,7 @@ open import Cubical.HITs.SetTruncation renaming (rec to recSetTrunc)
 open import Cubical.Data.Sigma
 open import Cubical.Functions.FunExtEquiv
 open import Cubical.Functions.Embedding
+open import Cubical.Functions.Surjection
 open import ELib.Connectedness.Base
 open import ELib.Connectedness.Properties
 open import Cubical.Homotopy.Loopspace
@@ -199,11 +200,16 @@ isPropIsAbelian' G = isPropIsEquiv _
 isAbelian'→isAbelian : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian' G → isAbelian G
 isAbelian'→isAbelian {ℓ} G p = transport (cong isAbelian (uaGroup (Z G) G (fst (𝓩 G) , p) (snd (𝓩 G)))) (isAbelianZ G)
 
-{-
 isAbelian→isAbelian' : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian G → isAbelian' G
-isAbelian→isAbelian' Ggrp Gab .equiv-proof y = recPropTrunc isPropIsContr (λ p → transport (λ i → isContr (fiber (fst (𝓩 Ggrp)) (p i)))
-  ((ZG.pnt , refl) , λ x → recPropTrunc (lemma𝓩SetFibers Ggrp G.pnt _ _) (λ q → ΣPathP (q , transport (sym (PathP≡compPathL _ _ _)) (sym (rUnit _) ∙ {!!}))) (ZG.conn (fst x)))
-  ) (G.conn y) where
-  module G = ConcreteGroup Ggrp
-  module ZG = ConcreteGroup (Z Ggrp)
--}
+isAbelian→isAbelian' G ab = isEmbedding×isSurjection→isEquiv
+  ((λ x y → recPropTrunc (isPropIsEquiv _) (λ px → recPropTrunc (isPropIsEquiv _) (λ py →
+    transport (λ i → isEquiv {A = px i ≡ py i} (cong f)) isEquivCong𝓩G
+  ) (conn y)) (conn x)) ,
+  λ y → recPropTrunc propTruncIsProp (λ py → ∣ pnt , py ∣) (CG.conn G y)) where
+  open ConcreteGroup (Z G)
+  f = fst (𝓩 G)
+  isEquivCong𝓩G : isEquiv(cong𝓩 G)
+  isEquivCong𝓩G = isEmbedding×isSurjection→isEquiv (cong𝓩inj G , λ x → ∣ cong𝓩surj G x (ab x) ∣)
+
+isAbelian≃isAbelian' : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian G ≃ isAbelian' G
+isAbelian≃isAbelian' G = isoToEquiv (iso (isAbelian→isAbelian' G) (isAbelian'→isAbelian G) (λ _ → isPropIsEquiv _ _ _) λ _ → isPropIsAbelian G _ _)
