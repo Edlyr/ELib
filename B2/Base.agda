@@ -18,7 +18,8 @@ open import ELib.UsefulLemmas
 ConcreteAbelianGroup : ∀ ℓ → Type (ℓ-suc ℓ)
 ConcreteAbelianGroup ℓ = Σ[ A ∈ Pointed ℓ ] isConnected(fst A) × isConnected(snd A ≡ snd A) × is2Groupoid (fst A)
 
-B² : ∀ {ℓ} → AbConcreteGroup ℓ → ConcreteAbelianGroup ((ℓ-suc ℓ))
+{- Definition of B² with equality between pointed types
+B² : ∀ {ℓ} → AbConcreteGroup ℓ → ConcreteAbelianGroup (ℓ-suc ℓ)
 B² {ℓ} (G , abG) =
   B ,
   isConnectedUniversalCover A ,
@@ -28,7 +29,7 @@ B² {ℓ} (G , abG) =
   open ConcreteGroup G
   A : Pointed (ℓ-suc ℓ)
   A = (Pointed ℓ) , Ptd
-  B : Pointed (ℓ-suc (ℓ))
+  B : Pointed (ℓ-suc ℓ)
   B = UniversalCover A
   connUC = isConnectedUniversalCover A
   2groupoid : is2Groupoid (fst B)
@@ -44,5 +45,71 @@ B² {ℓ} (G , abG) =
         )
     ) (connUC (snd B) y))
     (connUC (snd B) x)
+-}
 
- 
+B² : ∀ {ℓ} → AbConcreteGroup ℓ → ConcreteAbelianGroup (ℓ-suc ℓ)
+B² {ℓ} (G , abG) =
+  B ,
+  isConnectedUniversalCover A ,
+  isSimplyConnectedUniversalCover A ,
+  2groupoid
+  where
+  open ConcreteGroup G
+  A : Pointed (ℓ-suc ℓ)
+  A = (Type ℓ) , type
+  B : Pointed (ℓ-suc ℓ)
+  B = UniversalCover A
+  connUC = isConnectedUniversalCover A
+  2groupoid : is2Groupoid (fst B)
+  2groupoid x y =
+    recPropTrunc isPropIsGroupoid  (λ px →
+    recPropTrunc isPropIsGroupoid (λ py →
+      transport (λ i → isGroupoid (px i ≡ py i))
+        (transport (cong isGroupoid (ua Σ≡)) (isGroupoidΣ (isOfHLevel≡ 3 isGrpd isGrpd)
+        λ _ → isSet→isGroupoid (isProp→isSet (transport (cong isProp (sym (PathP≡Path _ _ _))) (setTruncIsSet _ _)))))
+    ) (connUC (snd B) y))
+    (connUC (snd B) x)
+
+Aut² : ∀ {ℓ} → ConcreteAbelianGroup ℓ → AbConcreteGroup ℓ
+Aut² {ℓ} ((A , a) , conn , simplConn , 2type) =
+  conc-group
+    BG
+    (struct-conc-group
+      pnt
+      (simplConn pnt)
+      (2type _ _ _ _)
+    ) ,
+  Eckmann-Hilton (A , a)
+  where
+  BG : Type ℓ
+  BG = a ≡ a
+  pnt : BG
+  pnt = refl
+
+PathP≡compPathR₀ : ∀ {ℓ} {A : Type ℓ} {x y z : A} (p : y ≡ z) (q : ∥ x ≡ y ∥₀) (r : ∥ x ≡ z ∥₀) →
+  (PathP (λ i → ∥ x ≡ p i ∥₀) q r) ≡ (q ∙₀ ∣ p ∣₀ ≡ r)
+PathP≡compPathR₀ {x = x} {y = y} p =
+  J
+    (λ z p →  (q : ∥ x ≡ y ∥₀) (r : ∥ x ≡ z ∥₀) → (PathP (λ i → ∥ x ≡ p i ∥₀) q r) ≡ (q ∙₀ ∣ p ∣₀ ≡ r))
+    (λ q r → cong (λ x → x ≡ r) (rUnit₀ q))
+    p
+
+sec : ∀ {ℓ} (G : AbConcreteGroup ℓ) → ConcreteGroup.type (fst (Aut² (B² G))) ≃ ConcreteGroup.type (fst G)
+sec (G , ab) =
+  (type , ∣ refl ∣₀) ≡ (type , ∣ refl ∣₀)
+    ≃⟨ invEquiv Σ≡ ⟩
+  Σ[ p ∈ type ≡ type ] PathP (λ i → ∥ type ≡ p i ∥₀) ∣ refl ∣₀ ∣ refl ∣₀
+    ≃⟨ pathToEquiv (cong (Σ (type ≡ type)) (funExt λ p →
+      PathP (λ i → ∥ type ≡ p i ∥₀) ∣ refl ∣₀ ∣ refl ∣₀
+        ≡⟨ PathP≡compPathR₀ _ _ _ ∙ cong (λ x → x ≡ ∣ refl ∣₀) (sym (lUnit₀ _)) ⟩
+      ∣ p ∣₀ ≡ ∣ refl ∣₀
+        ≡⟨ pathEqualityInTrunc0 _ _ ⟩
+      ∥ p ≡ refl ∥ ∎
+    )) ⟩
+  Σ[ p ∈ type ≡ type ] ∥ p ≡ refl ∥
+    ≃⟨ BZ'≃BZ G ⟩
+  ConcreteGroup.type (Z G)
+    ≃⟨ (_ , isAbelian→isAbelian' G ab) ⟩
+  type ■
+  where
+  open ConcreteGroup G
