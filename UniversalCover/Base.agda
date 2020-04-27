@@ -13,6 +13,7 @@ open import ELib.Connectedness.Properties
 --open import Cubical.Homotopy.Loopspace
 open import Cubical.HITs.Nullification as Null hiding (rec; elim)
 open import Cubical.Data.NatMinusTwo
+open import Cubical.Data.Nat
 
 UniversalCover : ∀ {ℓ} → Pointed ℓ → Pointed ℓ
 UniversalCover (A , a) = (Σ[ x ∈ A ] ∥ a ≡ x ∥₀) , (a , ∣ refl ∣₀)
@@ -68,3 +69,24 @@ isSimplyConnectedUniversalCover (A , a) = transport (cong isConnected (sym lemma
     (Σ[ p ∈ (a ≡ a) ] ∣ p ∣₀ ≡ ∣ refl ∣₀)
       ≡⟨ cong (λ x → Σ (a ≡ a) x ) (funExt λ p → pathEqualityInTrunc0 p refl) ⟩
     (Σ[ p ∈ (a ≡ a) ] ∥ p ≡ refl ∥) ∎
+
+-- HLevel of the UniversalCover
+{-
+isOfHLevelUniversalCover : ∀ {ℓ} (n : ℕ) (A : Pointed ℓ) → isOfHLevel n (fst A) → isOfHLevel n (fst (UniversalCover A))
+isOfHLevelUniversalCover 0 A contrA = snd (UniversalCover A) , λ p → fst (invEquiv (UCPath≃ _ _)) (sym (snd contrA (snd A)) ∙ snd contrA (fst p) , {!!})
+isOfHLevelUniversalCover 1 A propA x y = {!!}
+isOfHLevelUniversalCover (suc (suc n)) A levelA x y = {!!}
+-}
+{-
+isGrpd→is2typeUniversalCover : ∀ {ℓ} (A : Pointed ℓ) → isGroupoid (fst A) → is2Groupoid (fst (UC A))
+isGrpd→is2typeUniversalCover (A , a) grpd x y =
+  recPropTrunc isPropIsGroupoid (λ px →
+  recPropTrunc isPropIsGroupoid (λ py → 
+    transport (λ i → isGroupoid (px i ≡ py i))
+     (transport (cong isGroupoid (ua Σ≡))
+     (isGroupoidΣ {!!} {!!})
+    )
+  ) (conn (a , ∣ refl ∣₀) y))
+  (conn (a , ∣ refl ∣₀) x) where
+  conn = isConnectedUniversalCover (A , a)
+-}

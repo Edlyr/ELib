@@ -56,8 +56,8 @@ isAbelian G = (x y : pnt ≡ pnt) → (x ∙ y) ≡ (y ∙ x) where open Concret
 isPropIsAbelian : ∀ {ℓ} (G : ConcreteGroup ℓ) → isProp (isAbelian G)
 isPropIsAbelian G = isPropΠ2 λ _ _ → isGrpd _ _ _ _ where open ConcreteGroup G
 
-AbConcreteGroup : ∀ {ℓ} → Type (ℓ-suc ℓ)
-AbConcreteGroup {ℓ} = Σ (ConcreteGroup ℓ) isAbelian
+AbConcreteGroup : ∀ ℓ → Type (ℓ-suc ℓ)
+AbConcreteGroup ℓ = Σ (ConcreteGroup ℓ) isAbelian
 
 -- Group isomorphism implies equality
 -- Not a very pretty proof, mostly because Agda has a hard time inferring implicit arguments
