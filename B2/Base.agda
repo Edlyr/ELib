@@ -173,14 +173,14 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
   ϕ a' = (a ≡ a') , recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a')))
 
   pointed : ϕ a ≡ b
-  pointed = ΣPathP (refl , (
-    recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a)))
-      ≡⟨ cong (λ x → recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (x))))
-        (isPropIsContr (isContrT a) (isContrTa)) ⟩
-    recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrTa)))
-      ≡⟨ cong ∣_∣₀ uaIdEquiv ⟩
-    _ ∎
-   ))
+  pointed = ΣPathP (refl ,
+       (recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a)))
+         ≡⟨ cong (λ x → recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (x))))
+           (isPropIsContr (isContrT a) (isContrTa)) ⟩
+       recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrTa)))
+         ≡⟨ cong ∣_∣₀ uaIdEquiv ⟩
+       _ ∎
+      )) 
   abstract
     pointedBis : ϕ a ≡ b
     pointedBis = ΣPathP (refl , (
@@ -217,11 +217,11 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
         subLemma : (p : a ≡ a') → transport (λ i → (a ≡ a) ≡ (a ≡ p i)) refl ≡ (λ i → (a ≡ p i))
         subLemma = J (λ a' p → transport (λ i → (a ≡ a) ≡ (a ≡ p i)) refl ≡ (λ i → (a ≡ p i))) (transportRefl _)
         
-        test : (((a ≡ a) , ∣ refl ∣₀) ≡ (pointed i1)) ≃ (a ≡ a)
-        test = (sec (Aut² Astruct))
+        eq1 : (((a ≡ a) , ∣ refl ∣₀) ≡ (pointed i1)) ≃ (a ≡ a)
+        eq1 = (sec (Aut² Astruct))
 
-        test1 : (((a ≡ a) , ∣ refl ∣₀) ≡ (pointed i1)) ≃ (a ≡ a)
-        test1 = fun , transport (cong isEquiv (funExt λ x → transportRefl _ ∙ cong (transport (cong fst x)) (transportRefl _))) (snd test) where
+        eq2 : (((a ≡ a) , ∣ refl ∣₀) ≡ (pointed i1)) ≃ (a ≡ a)
+        eq2 = fun , transport (cong isEquiv (funExt λ x → transportRefl _ ∙ cong (transport (cong fst x)) (transportRefl _))) (snd eq1) where
           fun : (((a ≡ a) , ∣ refl ∣₀) ≡ (pointed i1)) → (a ≡ a)
           fun x = transport (cong fst x) refl
 
@@ -230,23 +230,25 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
           (λ x → x ∙ pointed)
           (λ y → y ∙ sym pointed)
           (λ y → sym (assoc _ _ _) ∙ cong (λ x → y ∙ x) (lCancel pointed) ∙ (sym (rUnit y)))
-          {!!}) --λ x → sym (assoc _ _ _) ∙ cong (λ y → x ∙ y) (rCancel pointed) ∙ (sym (rUnit x)))
-          -- The above commented line is correct, but Agda cannot load the file (timeout) if it is uncommented
-        test3 : (pointed i1 ≡ pointed i0) ≃ (a ≡ a)
-        test3 = compEquiv ∙pointed test1
+          λ x → sym (assoc _ _ _) ∙ (λ i → x ∙ (rCancel pointed i)) ∙ sym (rUnit x))
+          -- For an unknown reason, using "cong" instead of "λ i → ..." in the above line results in a compiling timeout :
+          -- λ x → sym (assoc _ _ _) ∙ (cong (λ y → x ∙ y) (rCancel pointedBis)) ∙ sym (rUnit x)
+ 
+        eq3 : (pointed i1 ≡ pointed i0) ≃ (a ≡ a)
+        eq3 = compEquiv ∙pointed eq2
 
         ev-_-reflₐ : (a' : A) → b ≡ (ϕ a') → (a ≡ a')
         ev-_-reflₐ a' p = (transport (cong fst p)) refl
 
-        truc : ev- a -reflₐ ≡ fst test3
+        truc : ev- a -reflₐ ≡ fst eq3
         truc = funExt λ x → _ ≡⟨ cong (ev- a -reflₐ) (rUnit x) ⟩ ev- a -reflₐ (x ∙ refl) ∎
         
         ev-a'-eq : (a' : A) → isEquiv ev- a' -reflₐ
         ev-a'-eq a' = recPropTrunc (isPropIsEquiv _) (λ a≡a' → transport (cong (λ x → isEquiv ev- x -reflₐ) a≡a')
-          (transport (cong isEquiv (sym truc)) (snd test3))) (conn a a')
+          (transport (cong isEquiv (sym truc)) (snd eq3))) (conn a a')
         
         finalLemma : transport (λ i → (a ≡ a) ≡ (a ≡ transport f refl i)) (λ _ → a ≡ a) ≡ f
-        finalLemma = subLemma (fst (pathToEquiv f) refl) ∙ {!!}
+        finalLemma = subLemma (transport f refl) ∙ {!!}
 
   ϕeq : isEquiv ϕ
   ϕeq .equiv-proof y = recPropTrunc isPropIsContr (λ p → transport (cong (λ x → isContr (fiber ϕ x)) p) isContrϕ⁻¹b) (connB b y) where
