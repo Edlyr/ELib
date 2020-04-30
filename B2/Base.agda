@@ -7,7 +7,7 @@ open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ;
 open import Cubical.HITs.SetTruncation renaming (rec to recSetTrunc ; elim to elimSetTrunc)
 open import Cubical.Data.Sigma
 --open import Cubical.Functions.FunExtEquiv
---open import Cubical.Functions.Embedding
+open import Cubical.Functions.Embedding
 open import ELib.Connectedness.Base
 open import ELib.Connectedness.Properties
 open import ELib.ConcreteGroup.Base
@@ -246,9 +246,19 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
         ev-a'-eq : (a' : A) → isEquiv ev- a' -reflₐ
         ev-a'-eq a' = recPropTrunc (isPropIsEquiv _) (λ a≡a' → transport (cong (λ x → isEquiv ev- x -reflₐ) a≡a')
           (transport (cong isEquiv (sym truc)) (snd eq3))) (conn a a')
-        
+
+        wesh1 : b ≡ (ϕ a')
+        wesh1 = ΣPathP (f , symP {A = λ i → ∥ (a ≡ a) ≡ f (~ i) ∥₀} (transport (sym (PathP≡compPathR₀2refl _ _)) (sym !)))
+
+        wesh2 : b ≡ (ϕ a')
+        wesh2 = ΣPathP (((λ i → a ≡ transport f refl i)) , {!!})
+
+        ok : (ev- a' -reflₐ wesh1) ≡ (ev- a' -reflₐ wesh2)
+        ok = transport f refl ≡⟨ sym (fromPathP {A = λ i → a ≡ transport f refl i}
+          (transport (sym (PathP≡compPathR _ _ _)) (sym (lUnit _)))) ⟩ transport (λ i → a ≡ transport f refl i) refl ∎
+
         finalLemma : transport (λ i → (a ≡ a) ≡ (a ≡ transport f refl i)) (λ _ → a ≡ a) ≡ f
-        finalLemma = subLemma (transport f refl) ∙ {!!}
+        finalLemma = subLemma (transport f refl) ∙ sym (cong (cong fst) (fst (invEquiv (_ , isEquiv→isEmbedding (ev-a'-eq a') wesh1 wesh2)) ok))
 
   ϕeq : isEquiv ϕ
   ϕeq .equiv-proof y = recPropTrunc isPropIsContr (λ p → transport (cong (λ x → isContr (fiber ϕ x)) p) isContrϕ⁻¹b) (connB b y) where
