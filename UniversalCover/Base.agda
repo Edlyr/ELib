@@ -33,11 +33,11 @@ lUnit₀ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : ∥ x ≡ y ∥₀) → p ≡
 lUnit₀ = elimSetTrunc {B = λ p → p ≡ (∣ refl ∣₀ ∙₀ p)}
   (λ _ → isProp→isSet (setTruncIsSet _ _)) (λ q → cong (∣_∣₀) (lUnit q))
 
-pathEqualityInTrunc0 : ∀ {ℓ} {A : Type ℓ} {x y : A} (p q : x ≡ y) → (∣ p ∣₀ ≡ ∣ q ∣₀) ≡ ∥ p ≡ q ∥
-pathEqualityInTrunc0 {x = x} {y = y} p q =
+pathEqualityInTrunc0 : ∀ {ℓ} {A : Type ℓ} (p q : A) → (∣ p ∣₀ ≡ ∣ q ∣₀) ≡ ∥ p ≡ q ∥
+pathEqualityInTrunc0 {A = A} p q =
   (∣ p ∣₀ ≡ ∣ q ∣₀)
     ≡⟨ ua (congEquiv setTrunc≃Trunc0) ⟩
-  Path (∥_∥_ (x ≡ y) (-2+ 2)) ∣ p ∣ ∣ q ∣
+  Path (∥_∥_ A (-2+ 2)) ∣ p ∣ ∣ q ∣
     ≡⟨ PathIdTrunc _ ⟩
   ∥_∥_ (p ≡ q) (-2+ 1)
     ≡⟨ sym (propTrunc≡Trunc-1) ⟩

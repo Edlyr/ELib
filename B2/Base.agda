@@ -169,8 +169,52 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
   isContrT a' = recPropTrunc isPropIsContr (λ p →
     transport (cong (λ x → isContr (T x)) p) isContrTa) (conn a a')
 
+  {-C : Type (ℓ-suc ℓ)
+  C = Σ (Type ℓ) λ x → ∥ (a ≡ a) ≃ x ∥₀
+  c : C
+  c = ((a ≡ a) , ∣ idEquiv _ ∣₀)
+  ϕ : A → C
+  ϕ a' = (a ≡ a') , fst (fst (isContrT a'))
+
+  isContrϕ⁻¹c : isContr (fiber ϕ c)
+  isContrϕ⁻¹c = {!!} where
+    --equiv1 : fiber ϕ c ≃ (Σ[ a' ∈ A ] Σ[ p ∈ (a ≡ a') ≃ (a ≡ a) ] PathP (λ i → ∥ (a ≡ a) ≃ p i ∥₀) (snd (ϕ a')) ∣ refl ∣₀)
+    --equiv1 = isoToEquiv (iso (λ x → fst x , cong fst (snd x) , cong snd (snd x)) (λ y → fst y , ΣPathP (fst (snd y) , snd (snd y))) (λ _ → refl) λ _ → refl)
+    equiv2 : fiber ϕ c ≃ (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ snd (ϕ a'))
+    equiv2 = isoToEquiv
+      (iso
+        (λ (a' , p) → a' , pathToEquiv (sym (cong fst p)) , {!!})
+        {!!}
+        {!!}
+        {!!}
+      )
+
+  ϕ' : C ≃ B
+  ϕ' = isoToEquiv (iso
+    (λ x → fst x , recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (snd x))
+    (λ y → fst y , recSetTrunc setTruncIsSet (λ p → ∣ pathToEquiv p ∣₀) (snd y))
+    (λ y → ΣPathP (refl , elimSetTrunc
+      {B = λ α → recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (recSetTrunc setTruncIsSet (λ p → ∣ pathToEquiv p ∣₀) α) ≡ α}
+      (λ x → isProp→isSet (setTruncIsSet _ _)) (λ α → cong ∣_∣₀ (ua-pathToEquiv α)) (snd y)))
+    λ x → ΣPathP (refl , elimSetTrunc
+      {B = λ β → recSetTrunc setTruncIsSet (λ p → ∣ pathToEquiv p ∣₀) (recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) β) ≡ β}
+      (λ x → isProp→isSet (setTruncIsSet _ _)) (λ β → cong ∣_∣₀ (pathToEquiv-ua β)) (snd x))) --
+
+  pointed : fst ϕ' (ϕ a) ≡ b
+  pointed = ΣPathP (refl , (recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a)))
+         ≡⟨ cong (λ x → recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (x))))
+           (isPropIsContr (isContrT a) (isContrTa)) ⟩
+       recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrTa)))
+         ≡⟨ cong ∣_∣₀ uaIdEquiv ⟩
+       _ ∎
+      ))
+  -}
+
+  κ : (a' : A) → ∥ (a ≡ a) ≃ (a ≡ a') ∥₀
+  κ = λ a' → fst (fst (isContrT a'))
+
   ϕ : A → B {- = Σ (Set ℓ) (λ x → ∥ (a ≡ a) ≡ x ∥₀) -}
-  ϕ a' = (a ≡ a') , recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a')))
+  ϕ a' = (a ≡ a') , recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (κ a')
 
   pointed : ϕ a ≡ b
   pointed = ΣPathP (refl ,
@@ -180,17 +224,7 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
        recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrTa)))
          ≡⟨ cong ∣_∣₀ uaIdEquiv ⟩
        _ ∎
-      )) 
-  abstract
-    pointedBis : ϕ a ≡ b
-    pointedBis = ΣPathP (refl , (
-      recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrT a)))
-        ≡⟨ cong (λ x → recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (x))))
-          (isPropIsContr (isContrT a) (isContrTa)) ⟩
-      recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (fst (fst (isContrTa)))
-        ≡⟨ cong ∣_∣₀ uaIdEquiv ⟩
-      _ ∎
-     ))
+      ))
 
   pointedRetr : (A , a) →∙ (B , b)
   pointedRetr = ϕ , pointed
@@ -210,7 +244,33 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
             -- Here, we could use the fact that we are in the double-(dependant)-loopspace of a set truncation,
             -- but transport-Transport works just fine without having to worry about dependant paths
      ))-}
-    lemmaContr : isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≡ (a ≡ a') ] ∣ f ∣₀ ≡ snd (ϕ a'))
+
+    path→eq : (a' : A) → (p : (a ≡ a) ≡ (a ≡ a')) → (g : ∥ (a ≡ a) ≃ (a ≡ a') ∥₀) →
+      ∣ p ∣₀ ≡ recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) g → ∣ pathToEquiv p ∣₀ ≡ g
+    path→eq a' p g =
+      elimSetTrunc {B = λ g → ∣ p ∣₀ ≡ recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) g → ∣ pathToEquiv p ∣₀ ≡ g}
+        (λ _ → isProp→isSet (isPropΠ λ _ → setTruncIsSet _ _))
+        (λ g q → recPropTrunc (setTruncIsSet _ _) (λ r → cong ∣_∣₀ (cong pathToEquiv r ∙ pathToEquiv-ua g)) ((transport (pathEqualityInTrunc0 _ _) q)))
+        g
+
+    eq→path : (a' : A) → (f : (a ≡ a) ≃ (a ≡ a')) → (g : ∥ (a ≡ a) ≃ (a ≡ a') ∥₀) →
+      ∣ f ∣₀ ≡ g → ∣ ua f ∣₀ ≡ recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) g
+    eq→path a' f g =
+      elimSetTrunc {B = λ g → ∣ f ∣₀ ≡ g → ∣ ua f ∣₀ ≡ recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) g}
+        (λ _ → isProp→isSet (isPropΠ λ _ → setTruncIsSet _ _))
+        (λ g p → recPropTrunc (setTruncIsSet _ _) (λ q → cong (λ x → ∣ ua x ∣₀) q) (transport (pathEqualityInTrunc0 f g) p))
+        g
+
+    equiv3 : (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≡ (a ≡ a') ] ∣ f ∣₀ ≡ snd (ϕ a')) ≃ (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a')
+    equiv3 = isoToEquiv
+      (iso
+        (λ (a' , p , !) → a' , pathToEquiv p , path→eq a' p (κ a') !)
+        (λ (a' , f , !) → a' , ua f , eq→path a' f (κ a') !)
+        (λ x → ΣPathP (refl , ΣPathP (pathToEquiv-ua _ , toPathP (setTruncIsSet _ _ _ _))))
+        λ x → ΣPathP (refl , ΣPathP (ua-pathToEquiv _ , toPathP (setTruncIsSet _ _ _ _)))
+      )
+
+    {-lemmaContr : isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≡ (a ≡ a') ] ∣ f ∣₀ ≡ snd (ϕ a'))
     lemmaContr = (a , refl , sym (cong snd pointed)) , contr where
       contr : (y : Σ-syntax A (λ a' →  Σ-syntax ((a ≡ a) ≡ (a ≡ a')) (λ f → ∣ f ∣₀ ≡ snd (ϕ a')))) → (a , (λ _ → a ≡ a) , (λ i → snd (pointed (~ i)))) ≡ y
       contr (a' , f , !) = ΣPathP (fst (pathToEquiv f) refl , toPathP (ΣPathP (finalLemma , toPathP (setTruncIsSet _ _ _ _)))) where
@@ -259,15 +319,15 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
 
         finalLemma : transport (λ i → (a ≡ a) ≡ (a ≡ transport f refl i)) (λ _ → a ≡ a) ≡ f
         finalLemma = subLemma (transport f refl) ∙ sym (cong (cong fst) (fst (invEquiv (_ , isEquiv→isEmbedding (ev-a'-eq a') wesh1 wesh2)) ok))
-
+  -}
   ϕeq : isEquiv ϕ
   ϕeq .equiv-proof y = recPropTrunc isPropIsContr (λ p → transport (cong (λ x → isContr (fiber ϕ x)) p) isContrϕ⁻¹b) (connB b y) where
 
   equivRetr : A ≃ B
   equivRetr = ϕ , ϕeq
 
-retrFun : ∀ {ℓ} (A : ConcreteAbelianGroup ℓ) → (fst A) →∙ (fst (B² (Aut² A)))
-retrFun {ℓ} A = retr.pointedRetr A
+--retrFun : ∀ {ℓ} (A : ConcreteAbelianGroup ℓ) → (fst A) →∙ (fst (B² (Aut² A)))
+--retrFun {ℓ} A = retr.pointedRetr A
 
-retrEq : ∀ {ℓ} (A : ConcreteAbelianGroup ℓ) → fst (fst A) ≃ fst (fst (B² (Aut² A)))
-retrEq A = retr.equivRetr A
+--retrEq : ∀ {ℓ} (A : ConcreteAbelianGroup ℓ) → fst (fst A) ≃ fst (fst (B² (Aut² A)))
+--retrEq A = retr.equivRetr A
