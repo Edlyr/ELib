@@ -142,10 +142,8 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
   
   T : A → Type ℓ
   T a' = Σ[ α ∈ ∥ (a ≡ a) ≃ (a ≡ a') ∥₀ ] ((p : a ≡ a') → α ≡ (∣
-    isoToEquiv (iso (λ q → q ∙ p) (λ r → r ∙ p ⁻¹)
-      (λ r → sym (assoc _ _ _) ∙ (cong (λ x → r ∙ x) (lCancel _)) ∙ sym (rUnit _))
-      λ q → sym (assoc _ _ _) ∙ (cong (λ x → q ∙ x) (lCancel _)) ∙ sym (rUnit _) )
-   ∣₀))
+    (λ q → q ∙ p) , compPathr-isEquiv p
+    ∣₀))
   caracTa : T a ≃ (Σ[ α ∈ ∥ (a ≡ a) ≃ (a ≡ a) ∥₀ ] (α ≡ ∣ idEquiv _ ∣₀))
   caracTa = isoToEquiv
    (iso
@@ -213,6 +211,9 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
   κ : (a' : A) → ∥ (a ≡ a) ≃ (a ≡ a') ∥₀
   κ = λ a' → fst (fst (isContrT a'))
 
+  --ϕ' : A → Σ (Type ℓ) (λ x → ∥ (a ≡ a) ≃ x ∥₀)
+  --ϕ' a' = (a ≡ a') , κ a'
+
   ϕ : A → B {- = Σ (Set ℓ) (λ x → ∥ (a ≡ a) ≡ x ∥₀) -}
   ϕ a' = (a ≡ a') , recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) (κ a')
 
@@ -230,7 +231,7 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
   pointedRetr = ϕ , pointed
 
   isContrϕ⁻¹b : isContr (fiber ϕ b)
-  isContrϕ⁻¹b = {!!} where --transport (cong isContr (sym (ua equiv2))) lemmaContr  where
+  isContrϕ⁻¹b = {!!} where --transport (cong isContr (sym (ua equiv2))) lemmaContr where
     {-equiv1 : fiber ϕ b ≃ (Σ[ a' ∈ A ] Σ[ p ∈ (a ≡ a') ≡ (a ≡ a) ] PathP (λ i → ∥ (a ≡ a) ≡ p i ∥₀) (snd (ϕ a')) ∣ refl ∣₀)
     equiv1 = isoToEquiv (iso (λ x → fst x , cong fst (snd x) , cong snd (snd x)) (λ y → fst y , ΣPathP (fst (snd y) , snd (snd y))) (λ _ → refl) λ _ → refl)
 
@@ -243,7 +244,7 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
       λ x → ΣPathP (refl , ΣPathP (refl , transport⁻Transport (PathP≡compPathR₀2refl _ _) _))
             -- Here, we could use the fact that we are in the double-(dependant)-loopspace of a set truncation,
             -- but transport-Transport works just fine without having to worry about dependant paths
-     ))-}
+     ))
 
     path→eq : (a' : A) → (p : (a ≡ a) ≡ (a ≡ a')) → (g : ∥ (a ≡ a) ≃ (a ≡ a') ∥₀) →
       ∣ p ∣₀ ≡ recSetTrunc setTruncIsSet (λ eq → ∣ ua eq ∣₀) g → ∣ pathToEquiv p ∣₀ ≡ g
@@ -268,8 +269,45 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
         (λ (a' , f , !) → a' , ua f , eq→path a' f (κ a') !)
         (λ x → ΣPathP (refl , ΣPathP (pathToEquiv-ua _ , toPathP (setTruncIsSet _ _ _ _))))
         λ x → ΣPathP (refl , ΣPathP (ua-pathToEquiv _ , toPathP (setTruncIsSet _ _ _ _)))
-      )
+      )-}
 
+    caracκa : ∣ idEquiv (a ≡ a) ∣₀ ≡ κ a
+    caracκa = sym (snd (fst caracTa (fst (isContrT a))))
+
+    lemmaContr : isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a')
+    lemmaContr = (a , idEquiv (a ≡ a) , caracκa) , contr where
+      contr : (y : Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a') → (a , idEquiv (a ≡ a) , caracκa) ≡ y
+      contr (a' , f , !) = ΣPathP (fst f refl , toPathP (ΣPathP (lemmaTransp ∙ {!!} , toPathP (setTruncIsSet _ _ _ _)))) where
+        transport→R : {X Y Z : Type ℓ} (p : Y ≡ Z) (f : X → Y) →
+          transport (λ i → X → (p i)) f ≡ λ x → transport p (f x)
+        transport→R {X} {Y} {Z} p f = J (λ Z p → transport (λ i → X → (p i)) f ≡ λ x → transport p (f x))
+          (funExt λ x → cong (λ f → f x) (transportRefl f) ∙ sym (transportRefl (f x))) p
+          
+        concLeft : (a ≡ a) ≃ (a ≡ a')
+        concLeft = (λ q → q ∙ fst f refl) , compPathr-isEquiv _
+
+        lemmaTransp : (transport (λ i → (a ≡ a) ≃ (a ≡ fst f refl i)) (idEquiv _)) ≡ concLeft
+        lemmaTransp = equivEq _ _ (transport (λ i → (a ≡ a) → (a ≡ fst f refl i)) (λ x → x)
+         ≡⟨ (funExt λ q → cong (λ f → f q) (transport→R (λ i → a ≡ fst f refl i) (λ x → x)) ∙ fromPathP {A = λ i → a ≡ fst f refl i}
+            (transport (sym (PathP≡compPathR _ _ _)) refl)) ⟩
+         _ ∎)
+
+        test : Type (ℓ-suc ℓ)
+        test = Σ (Type ℓ) λ x → ∥ (a ≡ a) ≃ x ∥₀
+
+        x₀ : test
+        x₀ = (a ≡ a) , ∣ idEquiv (a ≡ a) ∣₀
+        x₁ : test
+        x₁ = (a ≡ a') , κ a'
+
+        ok : {X Y : Type ℓ} (p : X ≡ Y) → transport (λ i → ∥ X ≃ p i ∥₀) (∣ idEquiv _ ∣₀) ≡ ∣ pathToEquiv p ∣₀
+        ok {X} = J (λ Y p → transport (λ i → ∥ X ≃ p i ∥₀) (∣ idEquiv _ ∣₀) ≡ ∣ pathToEquiv p ∣₀)
+          (transportRefl ∣ idEquiv X ∣₀ ∙ cong ∣_∣₀ (sym pathToEquivRefl))
+
+        p₁ : x₀ ≡ x₁
+        p₁ = ΣPathP (ua f , toPathP (ok (ua f) ∙ cong ∣_∣₀ (pathToEquiv-ua f) ∙ !))
+        p₂ : x₀ ≡ x₁
+        p₂ = ΣPathP (ua concLeft , toPathP (ok (ua concLeft) ∙ cong ∣_∣₀ (pathToEquiv-ua concLeft) ∙ sym (snd (fst (isContrT a')) (fst f refl))))
     {-lemmaContr : isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≡ (a ≡ a') ] ∣ f ∣₀ ≡ snd (ϕ a'))
     lemmaContr = (a , refl , sym (cong snd pointed)) , contr where
       contr : (y : Σ-syntax A (λ a' →  Σ-syntax ((a ≡ a) ≡ (a ≡ a')) (λ f → ∣ f ∣₀ ≡ snd (ϕ a')))) → (a , (λ _ → a ≡ a) , (λ i → snd (pointed (~ i)))) ≡ y
