@@ -4,6 +4,7 @@ module ELib.B1.Base where
 
 open import Cubical.Foundations.Everything
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc)
+open import Cubical.Homotopy.Loopspace
 open import ELib.Group.Base
 
 PathP≡compPath2 : ∀ {ℓ} {A : Type ℓ} {a₀₀ a₁₀ : A} (a₋₀ : a₀₀ ≡ a₁₀) {a₀₁ a₁₁ : A} (a₋₁ : a₀₁ ≡ a₁₁) (a₀₋ : a₀₀ ≡ a₀₁) (a₁₋ : a₁₀ ≡ a₁₁)
@@ -44,11 +45,11 @@ module B {ℓ : Level} (Ggrp : Group ℓ) where
   elimBSet {ℓ'} {A} set a pA base = a
   elimBSet {ℓ'} {A} set a pA (path g i) = pA g i
   elimBSet {ℓ'} {A} set a pA (id i j) = isOfHLevel→isOfHLevelDep 2 set a a (cong (elimBSet set a pA) (path G.id)) refl id i j
-  elimBSet {ℓ'} {A} set a pA (conc g h h' g' eq i j) = test i j where
-    test : SquareP (λ i j → A (conc g h h' g' eq i j)) (pA g) (pA g') (pA h') (pA h)
-    test = toPathP (lama _ _) where
-      lama : isProp (PathP (λ i → A (path g' i)) a a)
-      lama = isOfHLevelPathP' 1 (λ i → set (path g' i)) a a
+  elimBSet {ℓ'} {A} set a pA (conc g h h' g' eq i j) = lemma i j where
+    lemma : SquareP (λ i j → A (conc g h h' g' eq i j)) (pA g) (pA g') (pA h') (pA h)
+    lemma = toPathP (subLemma _ _) where
+      subLemma : isProp (PathP (λ i → A (path g' i)) a a)
+      subLemma = isOfHLevelPathP' 1 (λ i → set (path g' i)) a a
   elimBSet {ℓ'} {A} set a pA (groupoid p q r s i j k) = isOfHLevel→isOfHLevelDep 3 (λ b → isSet→isGroupoid (set b)) a a
     (cong f p) (cong f q) (cong (cong f) r) (cong (cong f) s) (groupoid p q r s) i j k where
     f = elimBSet {ℓ'} {A} set a pA
@@ -58,23 +59,12 @@ module B {ℓ : Level} (Ggrp : Group ℓ) where
 
   isConnectedB : (x : B) → ∥ base ≡ x ∥
   isConnectedB = elimBProp (λ _ → propTruncIsProp) ∣ refl ∣
-  {-isConnectedB base = ∣ refl ∣
-  isConnectedB (path g i) = isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ base ≡ x ∥} (λ _ → propTruncIsProp) ∣ refl ∣ ∣ refl ∣ (path g) i
-  isConnectedB (id i j) = isOfHLevel→isOfHLevelDep 2 {B = λ x → ∥ base ≡ x ∥} (λ _ → isProp→isSet propTruncIsProp)
-    ∣ refl ∣ ∣ refl ∣ (cong isConnectedB (path G.id)) refl id i j
-  isConnectedB (conc g h h' g' p i j) = isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ base ≡ x ∥} (λ _ → propTruncIsProp)
-    (cong isConnectedB (path h') i) (cong isConnectedB (path h) i) (conc g h h' g' p i) j
--- the above seems interesting since we directly use the fact that we have a proposition instead of using isProp→isSet for some reason
-  isConnectedB (groupoid p q r s i j k) = isOfHLevel→isOfHLevelDep 3 {B = λ x → ∥ base ≡ x ∥}
-    (λ _ → isSet→isGroupoid (isProp→isSet propTruncIsProp))
-    ∣ refl ∣ ∣ refl ∣ (cong isConnectedB p) (cong isConnectedB q)
-    (cong (cong isConnectedB) r) (cong (cong isConnectedB) s) (groupoid p q r s) i j k-}
 
   isGroupoidB : isGroupoid B
   isGroupoidB x y = recPropTrunc isPropIsSet (λ p → recPropTrunc isPropIsSet
     (λ q → transport (λ i → isSet (Path B (p i) (q i))) groupoid)
     (isConnectedB y)) (isConnectedB x)
-  {-Code : B → Type ℓ
+  Code : B → Type ℓ
   Code = recB
     G.type
     (λ g → isoToPath (iso
@@ -89,9 +79,6 @@ module B {ℓ : Level} (Ggrp : Group ℓ) where
     )) ∙ (uaCompEquiv _ _)))
     (λ p q r s → isOfHLevel≡ 2 G.set G.set p q r s)
 
-  encode : (b : B) → base ≡ b → Code b
-  encode b p = transport (cong Code p) G.id
-
   transport→ : ∀ {ℓ} (A : Type ℓ) (B C : A → Type ℓ) (a a' : A) (p : a ≡ a') (f : B a → C a) →
     transport (λ i → B (p i) → C (p i)) f ≡ λ x → transport (λ i → C (p i)) (f (transport (λ i → B (p (~ i))) x))
   transport→ A B C a a' p = J
@@ -105,6 +92,9 @@ module B {ℓ : Level} (Ggrp : Group ℓ) where
   transport≡pathToEquiv p = funExt λ x → refl
 
   private
+    encode : (b : B) → base ≡ b → Code b
+    encode b p = transport (cong Code p) G.id
+  
     decodeType : (b : B) → Type ℓ
     decodeType b = Code b → base ≡ b
 
@@ -122,31 +112,26 @@ module B {ℓ : Level} (Ggrp : Group ℓ) where
                      cong (λ y → path (y ⨀ G.inv g) ∙ path g) (transportRefl _) ∙
                      conc' _ _ ∙ cong path ((G.assoc _ _ _ ∙ cong (λ y → x ⨀ y) (G.lCancel g) ∙ (sym (G.rUnit x))))) ⟩
                  path ∎)
-    postulate
-      decodeId : PathP (λ i → PathP (λ j → decodeType (id i j)) path path) (decodePath G.id) refl
-      --decodeId = isOfHLevel→isOfHLevelDep 2 {B = decodeType} decodeTypeSet path path (decodePath G.id) refl id
-      decodeConc : (g h h' g' : G.type) → (eq : g ⨀ h ≡ h' ⨀ g') →
-        (p : PathP (λ j → decodeType (conc g h h' g' eq i0 j)) path path) →
-        (q : PathP (λ j → decodeType (conc g h h' g' eq i1 j)) path path) →
-        (r : PathP (λ i → decodeType (conc g h h' g' eq i i0)) path path) →
-        (s : PathP (λ i → decodeType (conc g h h' g' eq i i1)) path path) →
-        SquareP (λ i j → decodeType (conc g h h' g' eq i j)) p q r s
-      decodeGroupoid : (p q : base ≡ base) (r s : p ≡ q) →
-        (p' : PathP (λ i → decodeType (p i)) path path) →
-        (q' : PathP (λ i → decodeType (q i)) path path) →
-        (r' : PathP (λ j → PathP (λ k → decodeType (groupoid p q r s i0 j k)) path path) p' q') →
-        (s' : PathP (λ j → PathP (λ k → decodeType (groupoid p q r s i1 j k)) path path) p' q') →
-        PathP (λ i → PathP (λ j → PathP (λ k → decodeType (groupoid p q r s i j k)) path path) p' q') r' s'
 
-  decode : (b : B) → decodeType b
-  decode base = path
-  decode (path g i) = decodePath g i where
-  decode (id i j) = decodeId i j
-  decode (conc g h h' g' eq i j) = decodeConc g h h' g' eq (cong decode (path g)) (cong decode (path g')) (cong decode (path h')) (cong decode (path h)) i j
-  decode (groupoid p q r s i j k) = decodeGroupoid p q r s (cong decode p) (cong decode q) (cong (cong decode) r) (cong (cong decode) s) i j k
+    decode : (b : B) → decodeType b
+    decode = elimBSet decodeTypeSet path decodePath
+ 
+    sec : (b : B) → (p : base ≡ b) → decode b (encode b p) ≡ p
+    sec b = J (λ b p → decode b (encode b p) ≡ p) (cong path (transportRefl _) ∙ id)
 
-  sec : (b : B) → (p : base ≡ b) → decode b (encode b p) ≡ p
-  sec b = J (λ b p → decode b (encode b p) ≡ p) (cong path (transportRefl _) ∙ id)
--}
-  --ret : (b : B) → (x : Code b) → encode b (decode b x) ≡ x
-  --ret base x = transportRefl _ ∙ sym (G.lUnit x)
+    ret : (b : B) → (x : Code b) → encode b (decode b x) ≡ x
+    ret = elimBProp (λ b → isPropΠ λ x → CodeSet b _ _) (λ x → transportRefl _ ∙ sym (G.lUnit x)) where
+      CodeSet : (b : B) → isSet (Code b)
+      CodeSet = elimBProp (λ _ → isPropIsSet) G.set
+
+  ΩBG→∙G : Ω (B , base) →∙ (G.type , G.id)
+  ΩBG→∙G = encode base , transportRefl G.id
+
+  G→∙ΩBG : (G.type , G.id) →∙ Ω (B , base)
+  G→∙ΩBG = decode base , id
+
+  G≃ΩBG : G.type ≃ fst (Ω (B , base))
+  G≃ΩBG = isoToEquiv (iso (decode base) (encode base) (sec base) (ret base))
+
+  ΩBG≃G : fst (Ω (B , base)) ≃ G.type
+  ΩBG≃G = invEquiv G≃ΩBG
