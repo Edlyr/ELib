@@ -271,12 +271,12 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
         λ x → ΣPathP (refl , ΣPathP (ua-pathToEquiv _ , toPathP (setTruncIsSet _ _ _ _)))
       )-}
       
-    abstract
-      caracκa : ∣ idEquiv (a ≡ a) ∣₀ ≡ κ a
-      caracκa = sym (snd (fst caracTa (fst (isContrT a))))
+    --abstract
+    --  caracκa : ∣ idEquiv (a ≡ a) ∣₀ ≡ κ a
+    --  caracκa = sym (snd (fst caracTa (fst (isContrT a))))
 
-    lemmaContr : isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a')
-    lemmaContr = (a , idEquiv (a ≡ a) , caracκa) , contr where
+    lemmaContr : ∣ idEquiv (a ≡ a) ∣₀ ≡ κ a → isContr (Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a')
+    lemmaContr caracκa = (a , idEquiv (a ≡ a) , caracκa) , contr where
       contr : (y : Σ[ a' ∈ A ] Σ[ f ∈ (a ≡ a) ≃ (a ≡ a') ] ∣ f ∣₀ ≡ κ a') → (a , idEquiv (a ≡ a) , caracκa) ≡ y
       contr (a' , f , !) = ΣPathP (fst f refl , toPathP (ΣPathP (lemmaTransp ∙ {!!} , toPathP (setTruncIsSet _ _ _ _)))) where
         transport→R : {X Y Z : Type ℓ} (p : Y ≡ Z) (f : X → Y) →
@@ -321,19 +321,30 @@ module retr {ℓ : Level} (Astruct : ConcreteAbelianGroup ℓ) where
         B'≃Bx₀ : fst B'≃B x₀ ≡ b
         B'≃Bx₀ = ΣPathP (refl , cong ∣_∣₀ uaIdEquiv)
 
-        pathEq : (x₀ ≡ x₁ a) ≃ (b ≡ b)
-        pathEq = compEquiv (congEquiv B'≃B) (pathToEquiv ((λ i → fst B'≃B x₀ ≡ fst B'≃B (_ , caracκa (~ i))) ∙ cong (λ x → x ≡ x) B'≃Bx₀))
+
+        abstract
+          pathEq : (x₀ ≡ x₁ a) ≃ (b ≡ b)
+          pathEq = compEquiv (congEquiv B'≃B) (pathToEquiv ((λ i → fst B'≃B x₀ ≡ fst B'≃B (_ , caracκa (~ i))) ∙ λ i → B'≃Bx₀ i ≡ B'≃Bx₀ i))
+        --pathEq = compEquiv (congEquiv B'≃B) (pathToEquiv ((λ i → fst B'≃B x₀ ≡ fst B'≃B (_ , caracκa (~ i))) ∙ cong (λ x → x ≡ x) B'≃Bx₀))
         --pathEq = compEquiv (congEquiv B'≃B) (pathToEquiv (cong (λ x → fst B'≃B x₀ ≡ fst B'≃B x) (ΣPathP (refl , sym caracκa)) ∙ cong (λ x → x ≡ x) B'≃Bx₀))
         --(pathToEquiv (cong (λ x → x ≡ x) B'≃Bx₀))
 
-        {-eq : ((x₀ ≡ x₁ a) ≃ (a ≡ a)) ≃ ((b ≡ b) ≃ (a ≡ a))
+        abstract
+          compEquiv2 : ∀ {ℓ} {A B C : Type ℓ} → A ≃ B → B ≃ C → A ≃ C
+          compEquiv2 f g = isoToEquiv
+                  (iso (λ x → g .fst (f .fst x))
+                       (λ x → invEq f (invEq g x))
+                       (λ y → (cong (g .fst) (retEq f (invEq g y))) ∙ (retEq g y))
+                       (λ y → (cong (invEq f) (secEq g (f .fst y))) ∙ (secEq f y)))
+
+        eq : ((x₀ ≡ x₁ a) ≃ (a ≡ a)) ≃ ((b ≡ b) ≃ (a ≡ a))
         eq = isoToEquiv
           (iso
-            (λ f → compEquiv (invEquiv pathEq) f)
-            (λ f → compEquiv pathEq f)
-            (λ f → equivEq _ _ refl ∙ cong (λ x → compEquiv x f) (invEquiv-is-linv pathEq) ∙ equivEq _ _ refl)
-            λ f → equivEq _ _ refl ∙ (cong (λ x → compEquiv x f) (invEquiv-is-rinv pathEq)) ∙ equivEq _ _ refl
-          )-}
+            (λ f → compEquiv2 (invEquiv pathEq) f)
+            ? --(λ f → compEquiv pathEq f)
+            ? --(λ f → equivEq _ _ refl ∙ cong (λ x → compEquiv x f) (invEquiv-is-linv pathEq) ∙ equivEq _ _ refl)
+            ? --λ f → equivEq _ _ refl ∙ (cong (λ x → compEquiv x f) (invEquiv-is-rinv pathEq)) ∙ equivEq _ _ refl
+          )
 
         transport≃0 : {X Y : Type ℓ} (p : X ≡ Y) → transport (λ i → ∥ X ≃ p i ∥₀) (∣ idEquiv _ ∣₀) ≡ ∣ pathToEquiv p ∣₀
         transport≃0 {X} = J (λ Y p → transport (λ i → ∥ X ≃ p i ∥₀) (∣ idEquiv _ ∣₀) ≡ ∣ pathToEquiv p ∣₀)
