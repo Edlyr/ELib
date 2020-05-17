@@ -97,14 +97,11 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
   data B : Type ℓ where
     base : B
     path : G.type → base ≡ base
-    --id : path G.id ≡ refl
-    --conc : (g h h' g' : G.type) → (g ⨀ h) ≡ (h' ⨀ g') → Square (path g) (path g') (path h') (path h) --PathP (λ i → path h' i ≡ path h i) (path g) (path g')
     conc : (g h : G.type) → Square (path g) (path (g ⨀ h)) refl (path h)
     groupoid : (p q : base ≡ base) (r s : p ≡ q) → r ≡ s
 
   conc' : (g h : G.type) → path g ∙ path h ≡ path (g ⨀ h)
   conc' g h = transport (PathP≡compPathR _ _ _) (conc g h)
-  --conc' g h = transport (PathP≡compPath2 _ _ _ _) (conc g h G.id (g ⨀ h) (G.lUnit _)) ∙ sym (lUnit _ ∙ cong (λ x → x ∙ path (g ⨀ h)) (sym id))
 
   id : path G.id ≡ refl
   id = L.idUniqueL (path G.id) (path G.id) ((transport (PathP≡compPathR _ _ _) (conc G.id G.id)) ∙ cong path (sym (G.lUnit G.id))) where
@@ -117,13 +114,10 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
     (p : G.type → a ≡ a) →
     (idA : p G.id ≡ refl) →
     (concA : (g h : G.type) → Square (p g) (p (g ⨀ h)) refl (p h))
-    --(concA : (g h h' g' : G.type) (eq : g ⨀ h ≡ h' ⨀ g') → Square (p g) (p g') (p h') (p h)) →
     (grpdA : (p q : a ≡ a) → (r s : p ≡ q) → r ≡ s) →
     B → A
   recB a pA idA concA grpdA base = a
   recB a pA idA concA grpdA (path g i) = pA g i
-  --recB a pA idA concA grpdA (id i j) = idA i j
-  --recB a pA idA concA grpdA (conc g h h' g' eq i j) = concA g h h' g' eq i j
   recB a pA idA concA grpdA (conc g h i j) = concA g h i j
   recB a pA idA concA grpdA (groupoid p q r s i j k) = grpdA (X p) (X q) (cong X r) (cong X s) i j k where
     X = cong (recB a pA idA concA grpdA)
@@ -131,12 +125,6 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
   elimBSet : ∀ {ℓ'} → {A : B → Type ℓ'} → ((b : B) → isSet (A b)) → (a : A base) → ((g : G.type) → PathP (λ i → A (path g i)) a a) → (b : B) → A b
   elimBSet {ℓ'} {A} set a pA base = a
   elimBSet {ℓ'} {A} set a pA (path g i) = pA g i
-  --elimBSet {ℓ'} {A} set a pA (id i j) = isOfHLevel→isOfHLevelDep 2 set a a (cong (elimBSet set a pA) (path G.id)) refl id i j
-  {-elimBSet {ℓ'} {A} set a pA (conc g h h' g' eq i j) = lemma i j where
-    lemma : SquareP (λ i j → A (conc g h h' g' eq i j)) (pA g) (pA g') (pA h') (pA h)
-    lemma = toPathP (subLemma _ _) where
-      subLemma : isProp (PathP (λ i → A (path g' i)) a a)
-      subLemma = isOfHLevelPathP' 1 (λ i → set (path g' i)) a a-}
   elimBSet {ℓ'} {A} set a pA (conc g h i j) = lemma i j where
     lemma : SquareP (λ i j → A (conc g h i j)) (pA g) (pA (g ⨀ h)) (λ i → a) (pA h)
     lemma = toPathP (subLemma _ _) where
@@ -169,9 +157,6 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
     (cong ua (equivEq _ _ (funExt λ x → sym (G.rUnit x))) ∙ uaIdEquiv)
     (λ g h → transport (sym (PathP≡compPathR _ _ _)) (sym (uaCompEquiv _ _) ∙ cong ua (equivEq _ _ (funExt λ x →
       G.assoc _ _ _))))
-    {-(λ g h h' g' eq → transport (sym (PathP≡compPath2 _ _ _ _)) (sym (uaCompEquiv _ _) ∙ cong ua (equivEq _ _ (funExt λ x →
-      G.assoc _ _ _ ∙ cong (λ y → x ⨀ y) eq ∙ sym (G.assoc _ _ _)
-    )) ∙ (uaCompEquiv _ _)))-}
     (λ p q r s → isOfHLevel≡ 2 G.set G.set p q r s)
 
   private
