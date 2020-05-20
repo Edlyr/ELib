@@ -79,3 +79,8 @@ PathP→ A B C a a' p =
 transport≡pathToEquiv : ∀ {ℓ} {A B : Type ℓ} → (p : A ≡ B) (x : A) → transport p x ≡ equivFun (pathToEquiv p) x
 transport≡pathToEquiv {ℓ} {A} {B} = J (λ B p → (x : A) → transport p x ≡ equivFun (pathToEquiv p) x)
   λ x → transportRefl x ∙ λ i → cong equivFun (sym pathToEquivRefl) i x
+
+pathToEquiv∙ : ∀ {ℓ} {A B : Type ℓ} (p : A ≡ B) {C : Type ℓ} (q : B ≡ C) → pathToEquiv (p ∙ q) ≡ compEquiv (pathToEquiv p) (pathToEquiv q)
+pathToEquiv∙ {ℓ} {A} {B} p =
+    J (λ C q → pathToEquiv (p ∙ q) ≡ compEquiv (pathToEquiv p) (pathToEquiv q))
+    (cong pathToEquiv (sym (rUnit p)) ∙ sym (compEquivEquivId _) ∙ cong (λ x → compEquiv (pathToEquiv p) x) (sym pathToEquivRefl))
