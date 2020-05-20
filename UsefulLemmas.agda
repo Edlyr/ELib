@@ -5,6 +5,7 @@ module ELib.UsefulLemmas where
 open import Cubical.Foundations.Everything
 open import Cubical.Homotopy.Loopspace -- for Eckmann-Hilton
 open import Cubical.Data.Sigma
+open import Cubical.Functions.FunExtEquiv
 
 typeof : ∀ {ℓ} {A : Type ℓ} → A → Type ℓ
 typeof {ℓ} {A} a = A
@@ -53,3 +54,28 @@ Eckmann-Hilton A g h = transport (λ i → PathP (λ j → simplification i j) (
   path2 i j = hcomp (λ k → λ {(j = i0) → r i ; (j = i1) → rUnit (g k) i}) (lUnit (h j) i)
   finalPath : PathP (λ j → (x ∙ refl ∙ sym x) j) (g ∙ h) (h ∙ g)
   finalPath = (compPathP path1 (compPathP preEck (symP path2)))
+
+transport→ : ∀ {ℓ ℓ' ℓ'' : Level} (A : Type ℓ) (B : A → Type ℓ') (C : A → Type ℓ'') (a a' : A) (p : a ≡ a') (f : B a → C a) →
+  transport (λ i → B (p i) → C (p i)) f ≡ λ x → transport (λ i → C (p i)) (f (transport (λ i → B (p (~ i))) x))
+transport→ A B C a a' p = J
+  (λ a' p → (f : B a → C a) → transport (λ i → B (p i) → C (p i)) f ≡ λ x → transport (λ i → C (p i)) (f (transport (λ i → B (p (~ i))) x)))
+  (λ f → transportRefl f ∙ funExt λ x → sym (transportRefl _ ∙ cong f (transportRefl _)))
+  p
+
+transport→R : ∀ {ℓ ℓ' ℓ''} (A : Type ℓ) (B : Type ℓ') (C : A → Type ℓ'') (a a' : A) (p : a ≡ a') (f : B → C a) →
+  transport (λ i → B → C (p i)) f ≡ λ x → transport (λ i → C (p i)) (f x)
+transport→R A B C a a' p f = transport→ A (λ _ → B) C a a' p f ∙ funExt λ x → cong (λ y → transport (cong C p) y) (cong f (transportRefl x))
+
+PathP→ : ∀ {ℓ ℓ' ℓ''} (A : Type ℓ) (B : A → Type ℓ') (C : A → Type ℓ'') (a a' : A) (p : a ≡ a') (f : B a → C a) (g : B a' → C a') →
+  (PathP (λ i → B (p i) → C (p i)) f g) ≡ ((x : B a) → transport (cong C p) (f x) ≡ g (transport (cong B p) x))
+PathP→ A B C a a' p =
+  J (λ a' p → (f : B a → C a) (g : B a' → C a') →
+    (PathP (λ i → B (p i) → C (p i)) f g) ≡ ((x : B a) → transport (cong C p) (f x) ≡ g (transport (cong B p) x)))
+    (λ f g → sym funExtPath ∙ λ i → (x : B a) → lemma x f g i)
+    p where
+  lemma : (x : B a) (f g : B a → C a) → (f x ≡ g x) ≡ (transport refl (f x) ≡ g (transport refl x))
+  lemma x f g = cong (λ r → r ≡ g x ) (sym (transportRefl _)) ∙ cong (λ r → _ ≡ r) (cong g (sym (transportRefl _)))
+
+transport≡pathToEquiv : ∀ {ℓ} {A B : Type ℓ} → (p : A ≡ B) (x : A) → transport p x ≡ equivFun (pathToEquiv p) x
+transport≡pathToEquiv {ℓ} {A} {B} = J (λ B p → (x : A) → transport p x ≡ equivFun (pathToEquiv p) x)
+  λ x → transportRefl x ∙ λ i → cong equivFun (sym pathToEquivRefl) i x
