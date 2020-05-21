@@ -105,8 +105,8 @@ module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction
 
   abstract
     torsorEqualityEquiv : (T¹ ≡ T²) ≃ T¹≃T²
-    torsorEqualityEquiv = compEquiv equiv0 (compEquiv equiv1 (compEquiv equiv2 equiv3))
-
+    torsorEqualityEquiv = compEquiv equiv0 (compEquiv equiv1 (compEquiv equiv2 equiv3)) 
+  
     torsorEqualityEquivFst : (p : T¹ ≡ T²) → (fst (equivFun torsorEqualityEquiv p)) ≡ pathToEquiv (cong fst p)
     torsorEqualityEquivFst p = refl
 

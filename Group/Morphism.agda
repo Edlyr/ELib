@@ -35,7 +35,7 @@ morphComp F G H f g = fst g ∘ fst f , isMorphismComp F G H f g
 GroupIso : (G : Group {ℓ}) (H : Group {ℓ'}) → Type (ℓ-max ℓ ℓ')
 GroupIso G H = Σ[ f ∈ ⟨ G ⟩ ≃ ⟨ H ⟩ ] isMorphism G H (fst f)
 
-isMorphismInv : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupIso G H) → isMorphism H G (equivFun (invEquiv (fst f)))
+isMorphismInv : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupIso G H) → isMorphism H G (invEq (fst f))
 isMorphismInv G H  ((f , eq) , morph) h h' = isInj-f _ _ (
   f (g (h ⋆² h') )
     ≡⟨ retEq (f , eq) _ ⟩
@@ -52,6 +52,9 @@ isMorphismInv G H  ((f , eq) , morph) h h' = isInj-f _ _ (
   isEmbedding-f = isEquiv→isEmbedding eq
   isInj-f : (x y : ⟨ G ⟩) → f x ≡ f y → x ≡ y
   isInj-f x y = invEq (_ , isEquiv→isEmbedding eq x y)
+
+groupIsoInv : (G : Group {ℓ}) (H : Group {ℓ'}) → GroupIso G H → GroupIso H G
+groupIsoInv G H (f , morph) = invEquiv f , isMorphismInv G H (f , morph)
 
 groupIsoComp : (F : Group {ℓ}) (G : Group {ℓ'}) (H : Group {ℓ''}) → GroupIso F G → GroupIso G H → GroupIso F H
 groupIsoComp F G H (f , morph-f)  (g , morph-g) = compEquiv f g , isMorphismComp F G H (fst f , morph-f) (fst g , morph-g)
