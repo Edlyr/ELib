@@ -94,3 +94,39 @@ InvGroupIso G = (f , isEquiv-f) , isMorph-f where
         ≡⟨ Ggrp.lCancel h ⟩
       Ggrp.id ∎))
     ) ⟩ (inv h ⨀ inv g) ∎
+
+-- Characterising a group by an isomorphism
+groupStructFromIso : (G : Group {ℓ}) → (H : Σ[ X ∈ Type ℓ' ] (X → X → X)) → (f : ⟨ G ⟩ ≃ fst H) →
+  ((g g' : ⟨ G ⟩) → equivFun f (group-operation G g g') ≡ snd H (equivFun f g) (equivFun f g')) → Group {ℓ'}
+groupStructFromIso G (X , _⋆_) (f , eq) morph-f =
+  X ,
+  _⋆_ ,
+  (isOfHLevelRespectEquiv 2 (f , eq) Ggrp.set ,
+  λ x y z → isInj-g _ _ (morph-g _ _ ∙ cong (λ r → g x ⨀ r) (morph-g _ _) ∙ sym (Ggrp.assoc _ _ _) ∙
+    sym (morph-g _ _ ∙ (cong (λ r → r ⨀ g z) (morph-g _ _))))) ,
+  f Ggrp.id ,
+  (λ x → isInj-g _ _ (morph-g _ _ ∙ cong (λ r → r ⨀ g x) (retEq (g , eq') Ggrp.id) ∙ sym (Ggrp.lUnit (g x)))) ,
+  λ x → f (Ggrp.inv (g x)) , isInj-g _ _ (morph-g _ _ ∙ cong (λ r → r ⨀ g x) (retEq (g , eq') _) ∙ Ggrp.lCancel (g x) ∙ sym (retEq (g , eq') Ggrp.id))
+  where
+  module Ggrp = GroupLemmas G
+  _⨀_ = Ggrp.op
+  
+  g = invEq (f , eq)
+  eq' : isEquiv g
+  eq' = snd (invEquiv (f , eq))
+
+  isInj-g : (x y : X) → g x ≡ g y → x ≡ y
+  isInj-g x y = invEq (_ , isEquiv→isEmbedding eq' x y)
+  
+  isInj-f : (x y : ⟨ G ⟩) → f x ≡ f y → x ≡ y
+  isInj-f x y = invEq (_ , isEquiv→isEmbedding eq x y)
+
+  morph-g : (x x' : X) → g (x ⋆ x') ≡ g x ⨀ g x'
+  morph-g x x' = isInj-f _ _ (
+    f (g (x ⋆ x'))
+      ≡⟨ retEq (f , eq) (x ⋆ x') ⟩
+    x ⋆ x'
+      ≡⟨ sym (λ i → retEq (f , eq) x i ⋆ retEq (f , eq) x' i) ⟩
+    f (g x) ⋆ f (g x')
+      ≡⟨ sym (morph-f (g x) (g x')) ⟩
+    f (g x ⨀ g x') ∎)
