@@ -1,3 +1,4 @@
+
 {-# OPTIONS --cubical #-}
 
 module ELib.B1.TorsorGroupoid where
@@ -86,20 +87,6 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
   preΩB : Group {_}
   preΩB = groupStructFromIso ΩB intermediateMagma (m , snd (caracB≡ PT PT)) caracB≡morphism
 
-  -----
-  {-inv-eq : ⟨ G ⟩ ≃ ⟨ G ⟩
-  inv-eq = isoToEquiv (iso (λ g → inv g) (λ g → inv g) (λ g → Ggrp.invInvo g) λ g → Ggrp.invInvo g)
-
-  inv-eq-isAntiMorphism : (g g' : ⟨ G ⟩) → equivFun inv-eq (g ⨀ g') ≡ equivFun inv-eq g' ⨀ equivFun inv-eq g
-  inv-eq-isAntiMorphism g g' = sym (Ggrp.invUniqueL _ _ (
-    (inv g' ⨀ inv g) ⨀ (g ⨀ g')   ≡⟨ Ggrp.assoc _ _ _ ⟩
-    (inv g' ⨀ (inv g ⨀ (g ⨀ g'))) ≡⟨ cong (λ x → inv g' ⨀ x) (sym (Ggrp.assoc _ _ _) ∙ cong (λ y → y ⨀ g') (Ggrp.lCancel g) ∙ sym (Ggrp.lUnit g')) ⟩
-    (inv g' ⨀ g')                   ≡⟨ Ggrp.lCancel g' ⟩
-    Ggrp.id ∎)
-   )-}
-
-  -----
-
   preΩB→G' : ⟨ preΩB ⟩ → ⟨ G' ⟩
   preΩB→G' ((f , equiv) , β) = f Ggrp.id
 
@@ -112,11 +99,6 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
   isMorphism-G'→preΩB : isMorphism G' preΩB G'→preΩB
   isMorphism-G'→preΩB g g' = ΣProp≡ (λ f → lemmaProp {PT} {PT} f) (equivEq _ _ (funExt λ x →
     ((g' ⨀ g) ⨀ x) ≡⟨ Ggrp.assoc g' g x ⟩ (g' ⨀ (g ⨀ x)) ∎))
-
-  --isAntiMorphism-G→preΩB : (g g' : ⟨ G ⟩) → G→preΩB (g ⨀ g') ≡ comp≃T {ℓ} {PT'} {PT'} {PT'} (G→preΩB g') (G→preΩB g)
-  --isAntiMorphism-G→preΩB g g' =
-  --  ΣProp≡ (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetBElement PT _ _)
-  --  (equivEq _ _ (funExt λ x → ((g ⨀ g') ⨀ x) ≡⟨ Ggrp.assoc _ _ _ ⟩ (g ⨀ ((g' ⨀ x))) ∎))
 
   private
     retr : retract G'→preΩB preΩB→G'

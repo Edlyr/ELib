@@ -32,7 +32,7 @@ p∙q⁻¹≡refl→p≡q p q r = rUnit _ ∙ (cong (λ x → p ∙ x) (sym (lCa
 
 p≡q→p∙q⁻¹≡refl : ∀ {ℓ} {A : Type ℓ} {a b : A} (p q : a ≡ b) → p ≡ q → (p ∙ q ⁻¹) ≡ refl
 p≡q→p∙q⁻¹≡refl p q r = cong (λ x → x ∙ q ⁻¹)  r ∙ (rCancel _)
-
+{-
 -- Eckmann-Hilton property
 preEckmann-Hilton : ∀ {ℓ} {A : Type ℓ} {x y z : A} (p q : x ≡ y) (r s : y ≡ z) (g : p ≡ q) (h : r ≡ s) →
   (cong (λ t → t ∙ r) g) ∙ (cong (λ t → q ∙ t) h) ≡ (cong (λ t → p ∙ t) h) ∙ (cong (λ t → t ∙ s) g)
@@ -54,7 +54,7 @@ Eckmann-Hilton A g h = transport (λ i → PathP (λ j → simplification i j) (
   path2 i j = hcomp (λ k → λ {(j = i0) → r i ; (j = i1) → rUnit (g k) i}) (lUnit (h j) i)
   finalPath : PathP (λ j → (x ∙ refl ∙ sym x) j) (g ∙ h) (h ∙ g)
   finalPath = (compPathP path1 (compPathP preEck (symP path2)))
-
+-}
 transport→ : ∀ {ℓ ℓ' ℓ'' : Level} (A : Type ℓ) (B : A → Type ℓ') (C : A → Type ℓ'') (a a' : A) (p : a ≡ a') (f : B a → C a) →
   transport (λ i → B (p i) → C (p i)) f ≡ λ x → transport (λ i → C (p i)) (f (transport (λ i → B (p (~ i))) x))
 transport→ A B C a a' p = J
