@@ -2,15 +2,20 @@
 
 module ELib.B2.HIT where
 open import Cubical.Foundations.Everything
+open import Cubical.Homotopy.Connected
 open import Cubical.Data.Sigma
 open import Cubical.Structures.Group
 open import Cubical.Structures.AbGroup
-open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc)
+open import Cubical.HITs.PropositionalTruncation renaming (∥_∥ to ∥_∥₋₁ ; ∣_∣ to ∣_∣₋₁ ; rec to recPropTrunc)
+open import Cubical.HITs.SetTruncation
+open import Cubical.HITs.2GroupoidTruncation renaming (rec to 2recGroupoidTrunc)
+open import Cubical.HITs.Truncation renaming (elim to elimHTrunc ; recElim to recHTrunc)
+open import Cubical.HITs.Nullification renaming (elim to elimNull ; ∣_∣ to ∣_∣ₙ)
 open import ELib.UsefulLemmas
 open import ELib.B1.Base
 
 PointedConnectedGroupoid : (ℓ : Level) → Type (ℓ-suc ℓ)
-PointedConnectedGroupoid ℓ = Σ[ X ∈ Type ℓ ] Σ[ a ∈ X ] ((x : X) → ∥ a ≡ x ∥) × isGroupoid X
+PointedConnectedGroupoid ℓ = Σ[ X ∈ Type ℓ ] Σ[ a ∈ X ] ((x : X) → ∥ a ≡ x ∥₋₁) × isGroupoid X
 
 PCG = PointedConnectedGroupoid
 
@@ -84,8 +89,76 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   elimB²prop : ∀ {ℓ'} → {A : B² → Type ℓ'} → (prop : (b : B²) → isProp (A b)) (a : A base) → (b : B²) → A b
   elimB²prop prop a = elimB²set (λ b → isProp→isSet (prop b)) a
     
-  isConnectedB² : (x : B²) → ∥ base ≡ x ∥
-  isConnectedB² = elimB²prop (λ _ → propTruncIsProp) ∣ refl ∣
+  isConnectedB² : (x : B²) → ∥ base ≡ x ∥₋₁
+  isConnectedB² = elimB²prop (λ _ → propTruncIsProp) ∣ refl ∣₋₁
+
+  isConnB² : isHLevelConnected 2 B²
+  isConnB² = ∣ base ∣ₙ , elimHTrunc (λ x → isProp→isSet (lemma x)) (elimB²prop (λ b → lemma ∣ b ∣ₙ) refl) where
+    lemma : (x : hLevelTrunc 2 B²) → isProp (∣ base ∣ₙ ≡ x)
+    lemma = isOfHLevelTrunc 2 ∣ base ∣ₙ
+
+  isSimplyConnB² : isHLevelConnected 3 B²
+  isSimplyConnB² = ∣ base ∣ₙ , elimHTrunc (λ x → isSet→isGroupoid (lemma x)) (elimB²set (λ b → lemma ∣ b ∣ₙ) refl) where
+    lemma : (x : hLevelTrunc 3 B²) → isSet (∣ base ∣ₙ ≡ x)
+    lemma = isOfHLevelTrunc 3 ∣ base ∣ₙ
+
+
+  ∣_∣_ : {ℓ : Level} {A : Type ℓ} → A → (n : _) → hLevelTrunc n A
+  ∣ x ∣ n = ∣ x ∣ₙ
+
+  isSimplyConnectedB² : (x y : B²) (p q : x ≡ y) → ∥ p ≡ q ∥₋₁
+  isSimplyConnectedB² x y p q = recHTrunc propTruncIsProp (λ r → ∣ r ∣₋₁) (transport (PathIdTrunc _) lemma) where
+    A = hLevelTrunc 2 (x ≡ y)
+    A' = (∣ x ∣ 3) ≡ (∣ y ∣ 3)
+    A'≡A : A' ≡ A
+    A'≡A = PathIdTrunc _
+    lemma : (∣ p ∣ 2) ≡ (∣ q ∣ 2)
+    lemma = subLemma _ _ where
+      set : isSet (hLevelTrunc 3 B²)
+      set = isProp→isSet (isContr→isProp isSimplyConnB²)
+      subLemma : isProp A
+      subLemma = transport (cong isProp A'≡A) (set (∣ x ∣ 3) (∣ y ∣ 3))
+
+  isGroupoidΩB² : isGroupoid (base ≡ base)
+  isGroupoidΩB² p q = recPropTrunc isPropIsSet (λ r → recPropTrunc isPropIsSet (λ s →
+    transport (cong isSet λ i → r i ≡ s i) 2grpd
+    ) (isSimplyConnectedB² base base refl q)) (isSimplyConnectedB² base base refl p)
+
+  ------------
+  module BG = B (AbGroup→Group G)
+  Code : B² → Type ℓ
+  Code = recB²
+    (BG.B)
+    {!!}
+    {!!}
+    {!!}
+
+  encode : (b : B²) → base ≡ b → Code b
+  encode b p = transport (cong Code p) (BG.base)
+  {-Code : B² → Type ℓ
+  Code = recB²
+    G.type
+    {!!}
+    (λ g h → toPathP (isOfHLevel≡ 2 G.set G.set refl _ _ _))
+    λ p q r s → isProp→isSet (isOfHLevel≡ 2 G.set G.set refl refl) p q r s
+  -}
+ 
+module TestsSphere {ℓ : Level} where
+  data S¹ : Type ℓ where
+    base¹ : S¹
+    loop : base¹ ≡ base¹
+  data S² : Type ℓ where
+    base² : S²
+    surf : refl {x = base²} ≡ refl {x = base²}
+
+  B² : Type ℓ
+  B² = ∥ S² ∥₂
+
+  prod : S¹ → S¹ → B²
+  prod base¹ _ = ∣ base² ∣₂
+  prod (loop i) base¹ = ∣ base² ∣₂
+  prod (loop i) (loop j) = ∣ surf i j ∣₂
+
 {-
 module CupProduct {ℓ : Level} (G : AbGroup {ℓ}) where
   Ggrp : Group {ℓ}
