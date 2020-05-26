@@ -7,6 +7,7 @@ open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc)
 open import Cubical.Homotopy.Loopspace
 open import Cubical.Structures.Group
 open import Cubical.Data.Sigma
+open import ELib.B1.MorphismDelooping
 open import ELib.UsefulLemmas
 
 PathP≡compPath2 : ∀ {ℓ} {A : Type ℓ} {a₀₀ a₁₀ : A} (a₋₀ : a₀₀ ≡ a₁₀) {a₀₁ a₁₁ : A} (a₋₁ : a₀₁ ≡ a₁₁) (a₀₋ : a₀₀ ≡ a₀₁) (a₁₋ : a₁₀ ≡ a₁₁)
@@ -20,65 +21,6 @@ transport≡p {ℓ} {A} {x} p q = J (λ C p → transport (λ i → x ≡ (p i))
 
 --transport≡pathToEquiv : ∀ {ℓ} {A B : Type ℓ} (p : A ≡ B) → transport p ≡ fst (pathToEquiv p)
 --transport≡pathToEquiv p = funExt λ x → refl
-
-deloopMorphism : ∀ {ℓ} {ℓ'} {A : Type ℓ} {B : Type ℓ'} → ((x y : A) → ∥ x ≡ y ∥) → (isGroupoid B) → {a : A} {b : B}
-    (f : a ≡ a → b ≡ b) → ((x y : a ≡ a) → f (x ∙ y) ≡ f x ∙ f y) →
-    Σ[ g ∈ (A → B) ] Σ[ p ∈ (b ≡ g a) ] ((q : a ≡ a) → p ∙ cong g q ≡ f q ∙ p)
-deloopMorphism {ℓ} {ℓ'} {A} {B} Aconn Bgrpd {a} {b} f morph = g , pr , lemma1 where
-    C : A → Type (ℓ-max ℓ ℓ')
-    C x = Σ[ y ∈ B ] Σ[ p ∈ ((a ≡ x) → (b ≡ y)) ] ((ω : a ≡ a) (α : a ≡ x) → p (ω ∙ α) ≡ f ω ∙ p α)
-
-    fRefl : f refl ≡ refl
-    fRefl = reflUnique (f refl) (f refl) (sym (cong f (rUnit refl) ∙ morph _ _)) where
-      reflUnique : (p : b ≡ b) (q : b ≡ b) → (p ∙ q ≡ q) → p ≡ refl
-      reflUnique p q r = rUnit p ∙ cong (λ x → p ∙ x) (sym (rCancel q)) ∙ assoc _ _ _ ∙ cong (λ x → x ∙ q ⁻¹) r ∙ rCancel q
-
-    isContrCa : isContr (C a)
-    isContrCa = transport (cong isContr (sym (ua lemma))) isContrUnit where
-      lemma : C a ≃ Unit {ℓ-max ℓ ℓ'}
-      lemma =
-        C a
-          ≃⟨ isoToEquiv
-            (iso
-              (λ (y , p , !) → y , p , λ ω → cong p (rUnit ω) ∙ ! ω refl)
-              (λ (y , p!) → y , fst p! , λ ω α → snd p! (ω ∙ α) ∙ cong (λ y → y ∙ (fst p! refl)) (morph ω α) ∙ sym (assoc _ _ _) ∙
-                cong (λ y → f ω ∙ y) (sym (snd p! α)))
-              (λ (y , p!) → ΣPathP (refl , ΣProp≡ (λ p → isPropΠ λ ω → Bgrpd _ _ _ _) refl))
-              λ (y , p , !) → ΣPathP (refl , ΣProp≡ (λ p → isPropΠ2 λ _ _ → Bgrpd _ _ _ _) refl)
-            ) ⟩
-        (Σ[ y ∈ B ] Σ[ p ∈ ((a ≡ a) → (b ≡ y)) ] ((ω : a ≡ a) → p ω ≡ f ω ∙ p refl))
-          ≃⟨ isoToEquiv
-            (iso
-              (λ (y , p , !) → y , p refl)
-              (λ (y , prefl) → y , (λ ω → f ω ∙ prefl) , λ ω → cong (λ x → f ω ∙ x) (lUnit prefl) ∙ cong (λ x → f ω ∙ x ∙ prefl) (sym fRefl))
-              (λ (y , prefl) → ΣPathP (refl , cong (λ x → x ∙ prefl) fRefl ∙ sym (lUnit prefl)))
-              λ (y , p , !) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → Bgrpd _ _ _ _) (funExt λ ω → sym (! ω)))
-            ) ⟩
-        (Σ[ y ∈ B ] b ≡ y)
-          ≃⟨ isoToEquiv (iso (λ _ → tt) (λ _ → b , refl) (λ { tt → refl }) λ (y , p) → ΣPathP (p , transport (sym (PathP≡compPathR _ _ _)) (sym (lUnit p)))) ⟩
-        Unit ■
-        
-    isContrC : (x : A) → isContr (C x)
-    isContrC x = recPropTrunc isPropIsContr (λ p → transport (cong isContr (cong C p)) isContrCa) (Aconn a x)
-
-    g : A → B
-    g x = fst (fst (isContrC x))
-
-    p : (x : A) → a ≡ x → b ≡ g x
-    p x = fst (snd (fst (isContrC x)))
-    pr = p a refl
-
-    ! : (x : A) → (ω : a ≡ a) (α : a ≡ x) → p x (ω ∙ α) ≡ f ω ∙ p x α
-    ! x = snd (snd (fst (isContrC x)))
-  
-    lemma0 : (x : A) (α : a ≡ x) (x' : A) → (q : x ≡ x') → p x α ∙ cong g q ≡ p x' (α ∙ q)
-    lemma0 x α x' q = J (λ x' q → p x α ∙ cong g q ≡ p x' (α ∙ q)) (sym (rUnit _) ∙ cong (p x) (rUnit α)) q
-
-    lemma1 : (q : a ≡ a) → pr ∙ cong g q ≡ f q ∙ pr
-    lemma1 q = lemma0 a refl a q ∙ cong (p a) (sym (lUnit _) ∙ rUnit _) ∙ ! a q refl
-
-    --result : PathP (λ i → a ≡ a → pr i ≡ pr i) f (cong g)
-    --result = {!toPathP!}
 
 module B {ℓ : Level} (Ggrp : Group {ℓ}) where
   module G = GroupLemmas Ggrp

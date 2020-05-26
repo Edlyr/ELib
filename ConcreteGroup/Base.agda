@@ -104,7 +104,7 @@ lemma𝓩SetFibers {ℓ} G x = recPropTrunc isPropIsSet (λ p → transport (λ 
     (isSetΣ subLemma (λ _ → isProp→isSet (isPropIsEquiv _)))) λ _ → isProp→isSet propTruncIsProp) where
     subLemma : isSet(Σ[ f ∈ (type → type) ] (f pnt ≡ pnt))
     subLemma (ϕ , p) (ψ , q) =
-      transport (cong isProp (ua Σ≡))
+      isOfHLevelRespectEquiv 1 Σ≃
       (transport (cong (λ x → isProp(Σ _ x)) (funExt λ _ → sym (PathP≡compPathL _ _ _)))
       λ π π' → ΣPathP (pathExt _ _ (cong sym (simplR q (snd π) ∙ sym (simplR q (snd π')))) , toPathP (isGrpd _ _ _ _ _ _))) where
         simplR : ∀ {ℓ} {A : Type ℓ} {a b c : A} {p : a ≡ b} {q : b ≡ c} → (s : a ≡ c) → p ∙ q ≡ s → p ≡ s ∙ sym q
