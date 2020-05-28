@@ -43,8 +43,8 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   _⨀_ = G.op
   data B² : Type ℓ where
     base : B²
-    path : G.type → refl {x = base} ≡ refl {x = base}
-    conc : (g h : G.type) → Square (path g) (path (g ⨀ h)) refl (path h)
+    surf : G.type → refl {x = base} ≡ refl {x = base}
+    conc : (g h : G.type) → Square (surf g) (surf (g ⨀ h)) refl (surf h)
     2grpd : (p q : refl {x = base} ≡ refl {x = base}) (r s : p ≡ q) → r ≡ s
 
   recB² : ∀ {ℓ'} → {A : Type ℓ'} →
@@ -54,7 +54,7 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
     (2grpdA : (p q : refl {x = a} ≡ refl {x = a}) → (r s : p ≡ q) → r ≡ s) →
     B² → A
   recB² a pA concA 2grpdA base = a
-  recB² a pA concA 2grpdA (path g i j) = pA g i j
+  recB² a pA concA 2grpdA (surf g i j) = pA g i j
   recB² a pA concA 2grpdA (conc g h i j k) = concA g h i j k
   recB² a pA concA 2grpdA (2grpd p q r s i j k l) = 2grpdA (X p) (X q) (cong X r) (cong X s) i j k l where
     X = cong (cong (recB² a pA concA 2grpdA))
@@ -62,18 +62,18 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   elimB²grpd : ∀ {ℓ'} → {A : B² → Type ℓ'} →
     (grpd : (b : B²) → isGroupoid (A b))
     (a : A base) →
-    (pA : (g : G.type) → SquareP (λ i j → A (path g i j)) {a₀₀ = a} {a₀₁ = a} (refl {x = a}) {a₁₀ = a} {a₁₁ = a} (refl {x = a}) (refl {x = a}) (refl {x = a}))
+    (pA : (g : G.type) → SquareP (λ i j → A (surf g i j)) {a₀₀ = a} {a₀₁ = a} (refl {x = a}) {a₁₀ = a} {a₁₁ = a} (refl {x = a}) (refl {x = a}) (refl {x = a}))
     (b : B²) → A b
   elimB²grpd grpd a pA base = a
-  elimB²grpd grpd a pA (path g i j) = pA g i j
+  elimB²grpd grpd a pA (surf g i j) = pA g i j
   elimB²grpd {A = A} grpd a pA (conc g h i j k) = cube i j k where --isOfHLevel→isOfHLevelDep 3 grpd a a refl refl {!pA ?!} {!!} {!!} i j k where
     cube : CubeP (λ i j k → A (conc g h i j k)) (pA g) (pA (g ⨀ h)) (refl {x = refl {x = a}}) (pA h) (refl {x = refl {x = a}}) (refl {x = refl {x = a}})
     cube = toPathP (lemma1 _ _) where
       lemma1 : isProp (typeof (pA (g ⨀ h)))
       lemma1 x y = isOfHLevelPathP' 1 lemma2 _ _ _ _ where
-        lemma2 : (i : I) → isSet (PathP (λ j → A (path (g ⨀ h) i j)) a a)
+        lemma2 : (i : I) → isSet (PathP (λ j → A (surf (g ⨀ h) i j)) a a)
         lemma2 i = isOfHLevelPathP' 2 (lemma3 i) _ _ where
-          lemma3 : (i j : I) → isGroupoid (A (path (g ⨀ h) i j))
+          lemma3 : (i j : I) → isGroupoid (A (surf (g ⨀ h) i j))
           lemma3 i j = grpd _
   elimB²grpd grpd a pA (2grpd p q r s i j k l) =
     isOfHLevel→isOfHLevelDep 4 (λ x → isOfHLevelSuc 3 (grpd x)) a a (refl {x = a}) (refl {x = a}) (X p) (X q) (cong X r) (cong X s) (2grpd p q r s) i j k l where
@@ -84,7 +84,7 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
     (a : A base) →
     (b : B²) → A b
   elimB²set set a = elimB²grpd (λ b → isSet→isGroupoid (set b)) a
-    (λ g → isOfHLevel→isOfHLevelDep 2 set a a (λ i → a) (λ i → a) (path g))
+    (λ g → isOfHLevel→isOfHLevelDep 2 set a a (λ i → a) (λ i → a) (surf g))
 
   elimB²prop : ∀ {ℓ'} → {A : B² → Type ℓ'} → (prop : (b : B²) → isProp (A b)) (a : A base) → (b : B²) → A b
   elimB²prop prop a = elimB²set (λ b → isProp→isSet (prop b)) a
@@ -130,7 +130,7 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   Code = recB²
     (BG.B)
     {!!}
-    {!!}
+    (λ g h → toPathP ({!!}))
     {!!}
 
   encode : (b : B²) → base ≡ b → Code b
@@ -174,7 +174,7 @@ module CupProduct {ℓ : Level} (G : AbGroup {ℓ}) where
   P : B¹ → B¹ → B²
   P B.base _ = B².base
   P (B.path g i) B.base = B².base
-  P (B.path g i) (B.path h j) = B².path (g ⨀ h) i j
+  P (B.path g i) (B.path h j) = B².surf (g ⨀ h) i j
   P (B.path g i) (B.conc h h' j k) = {!!}
   P (B.path g i) (B.groupoid p q r s j k l) = {!!}
   P (B.conc g h i j) = {!!}
