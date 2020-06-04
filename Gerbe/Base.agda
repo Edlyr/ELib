@@ -15,7 +15,7 @@ open import Cubical.Data.Sigma
 
 private
   variable
-    ℓ ℓ' : Level
+    ℓ ℓ' ℓ'' : Level
 
 isGerbe : Type ℓ → Type ℓ
 isGerbe X = ∥ X ∥ × isGroupoid X × ((x y : X) → ∥ x ≡ y ∥) × ((x : X) → (p q : x ≡ x) → p ∙ q ≡ q ∙ p)
@@ -103,18 +103,75 @@ link-by-π G x = (λ y → s-iso x y) , λ y z →
   ! : (t : _) → s-fun x x t ≡ t
   ! t = snd (s x x) refl t ∙ sym (rUnit _ ∙ lUnit _)
 
-
 -------------------
 
-postulate
-  AbGroup-ua : (G G' : AbGroup {ℓ}) → GroupIso (AbGroup→Group G) (AbGroup→Group G') → G ≡ G'
+module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
+  eA = fst ℒ
+  condA = snd ℒ
+  Agrp = AbGroup→Group A
+  test : (B : AbGroup {ℓ'}) → linked-by-ab G B ≃ GroupIso (Agrp) (AbGroup→Group B)
+  test B = isoToEquiv (iso f g sec retr) where
+    Bgrp = AbGroup→Group B
+
+    f : linked-by-ab G B → GroupIso Agrp Bgrp
+    f (eB , condB) = isContrT .fst .fst where
+      pre-f : (x : ⟨ G ⟩) → GroupIso Agrp Bgrp
+      pre-f x = groupIsoComp Agrp (AbGroup→Group (π G x)) Bgrp (eA x) (groupIsoInv Bgrp (AbGroup→Group (π G x)) (eB x))
+      
+      T : Type _
+      T = Σ[ i ∈ (GroupIso Agrp Bgrp) ] ((x : ⟨ G ⟩) (g : Ab⟨ A ⟩) → i .fst .fst g ≡ pre-f x .fst .fst g )
+
+      isContrT : isContr T
+      isContrT = recPropTrunc isPropIsContr (λ x₀ → (pre-f x₀ , λ x g → recPropTrunc (group-is-set Bgrp _ _)
+        (λ p → cong (λ ok → pre-f ok .fst .fst g) p) (gerbe-conn G x₀ x)) ,
+        λ f → ΣProp≡ (λ x → isPropΠ λ x₁ → isPropΠ λ g → group-is-set Bgrp _ _)
+        (ΣProp≡ (λ _ → isPropIsMorphism Agrp Bgrp _) (equivEq _ _ (funExt λ g → sym (snd f _ g))))) (gerbe-inhabited G)
+
+    assocGroupComp : ∀ {ℓ ℓ' ℓ'' ℓ''' : Level} → (F : Group {ℓ}) (G : Group {ℓ'}) (H : Group {ℓ''}) (I : Group {ℓ'''})
+      (f : GroupIso F G) (g : GroupIso G H) (h : GroupIso H I) →
+      groupIsoComp F G I f (groupIsoComp G H I g h) ≡ groupIsoComp F H I (groupIsoComp F G H f g) h
+    assocGroupComp F G H I f g h = ΣProp≡ (λ x → isPropIsMorphism F I (x .fst)) (equivEq _ _ refl)
+
+    g : GroupIso Agrp Bgrp → linked-by-ab G B
+    g i = eB , coherence where
+      j = groupIsoInv Agrp Bgrp i
+  
+      eB : (x : ⟨ G ⟩) → GroupIso Bgrp (AbGroup→Group (π G x))
+      eB x = groupIsoComp Bgrp Agrp (AbGroup→Group (π G x)) j (eA x)
+
+      coherence : _
+      coherence x y =
+        sym (assocGroupComp Bgrp Agrp (AbGroup→Group (π G x)) (AbGroup→Group (π G y)) j (eA x) (S.s-iso G x y)) ∙
+        cong (λ ok → groupIsoComp Bgrp Agrp (AbGroup→Group (π G y)) j ok) (condA x y)
+
+    sec : section f g
+    sec i = {!!}
+
+    retr : retract f g
+    retr (eB , condB) = ΣProp≡ (λ e → isPropΠ2 λ x y → {!!}) {!!}
+  
+
+{-postulate
+  AbGroup-ua : (G G' : AbGroup {ℓ}) → GroupIso (AbGroup→Group G) (AbGroup→Group G') ≃ (G ≡ G')
 
 Π : (G : Gerbe {ℓ}) → Σ[ A ∈ AbGroup {ℓ} ] (linked-by-ab G A)
 Π {ℓ} G = fst contr where
   type = Σ[ A ∈ AbGroup {ℓ} ] (linked-by-ab G A)
   contr : isContr type
-  contr = recPropTrunc isPropIsContr (λ x₀ → (π G x₀ , link-by-π G x₀) , λ A → ΣProp≡
-    {!!}
-    (AbGroup-ua (π G x₀) (A .fst) (groupIsoInv (AbGroup→Group (A .fst)) (AbGroup→Group (π G x₀)) (A .snd .fst x₀)))
-    ) (fst (snd G))
-  
+  contr = recPropTrunc isPropIsContr (λ x₀ → (π G x₀ , link-by-π G x₀) , λ A → {!!}
+  --ΣPathP ((fst (AbGroup-ua (π G x₀) (A .fst)) (groupIsoInv (AbGroup→Group (A .fst)) (AbGroup→Group (π G x₀)) (A .snd .fst x₀))) , {!!})
+    ) (fst (snd G)) where
+
+
+  lemma : (A : AbGroup {ℓ}) → (linked-by-ab G A) → (B : AbGroup {ℓ}) → (linked-by-ab G B) ≃ (GroupIso (AbGroup→Group A) (AbGroup→Group B))
+  lemma A link B = {!!}
+-}
+
+B² : (AbGroup {ℓ}) → Type (ℓ-suc ℓ)
+B² {ℓ} A = Σ[ G ∈ Gerbe {ℓ} ] (linked-by-ab G A)
+
+module tests (A : AbGroup {ℓ}) (G : B² A) where
+  B2 = B² A
+  carac : (G G' : B2) → (G ≡ G') ≃ (Σ (fst G ≡ fst G') (λ p → PathP (λ i → linked-by-ab (p i) A) (snd G) (snd G')))
+  carac G G' = invEquiv Σ≃
+

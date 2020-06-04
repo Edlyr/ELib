@@ -18,7 +18,7 @@ isMorphism G H f = (g g' : ⟨ G ⟩) → f (g ⋆¹ g') ≡ (f g ⋆² f g') wh
   _⋆¹_ = group-operation G
   _⋆²_ = group-operation H
 
-isPropIsMorphism : (G H : Group {ℓ}) (f : ⟨ G ⟩ → ⟨ H ⟩) → isProp (isMorphism G H f)
+isPropIsMorphism : (G : Group {ℓ}) (H : Group {ℓ'}) (f : ⟨ G ⟩ → ⟨ H ⟩) → isProp (isMorphism G H f)
 isPropIsMorphism G H f = isPropΠ2 λ _ _ → group-is-set H _ _
 
 Hom : (G : Group {ℓ}) (H : Group {ℓ'}) → Type (ℓ-max ℓ ℓ')
