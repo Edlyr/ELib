@@ -4,12 +4,12 @@ module ELib.B2.HIT where
 open import Cubical.Foundations.Everything
 open import Cubical.Homotopy.Connected
 open import Cubical.Data.Sigma
-open import Cubical.Structures.Group
+open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup
 open import Cubical.HITs.PropositionalTruncation renaming (∥_∥ to ∥_∥₋₁ ; ∣_∣ to ∣_∣₋₁ ; rec to recPropTrunc)
 open import Cubical.HITs.SetTruncation
 open import Cubical.HITs.2GroupoidTruncation renaming (rec to 2recGroupoidTrunc)
-open import Cubical.HITs.Truncation renaming (elim to elimHTrunc ; recElim to recHTrunc)
+open import Cubical.HITs.Truncation renaming (elim to elimHTrunc ; rec to recHTrunc)
 open import Cubical.HITs.Nullification renaming (elim to elimNull ; ∣_∣ to ∣_∣ₙ)
 open import ELib.UsefulLemmas
 open import ELib.B1.Base
@@ -43,14 +43,14 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   _⨀_ = G.op
   data B² : Type ℓ where
     base : B²
-    surf : G.type → refl {x = base} ≡ refl {x = base}
-    conc : (g h : G.type) → Square (surf g) (surf (g ⨀ h)) refl (surf h)
+    surf : ⟨ G ⟩ → refl {x = base} ≡ refl {x = base}
+    conc : (g h : ⟨ G ⟩) → Square (surf g) (surf (g ⨀ h)) refl (surf h)
     2grpd : (p q : refl {x = base} ≡ refl {x = base}) (r s : p ≡ q) → r ≡ s
 
   recB² : ∀ {ℓ'} → {A : Type ℓ'} →
     (a : A) →
-    (p : G.type → refl {x = a} ≡ refl {x = a}) →
-    (concA : (g h : G.type) → Square (p g) (p (g ⨀ h)) refl (p h))
+    (p : ⟨ G ⟩ → refl {x = a} ≡ refl {x = a}) →
+    (concA : (g h : ⟨ G ⟩) → Square (p g) (p (g ⨀ h)) refl (p h))
     (2grpdA : (p q : refl {x = a} ≡ refl {x = a}) → (r s : p ≡ q) → r ≡ s) →
     B² → A
   recB² a pA concA 2grpdA base = a
@@ -62,7 +62,7 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   elimB²grpd : ∀ {ℓ'} → {A : B² → Type ℓ'} →
     (grpd : (b : B²) → isGroupoid (A b))
     (a : A base) →
-    (pA : (g : G.type) → SquareP (λ i j → A (surf g i j)) {a₀₀ = a} {a₀₁ = a} (refl {x = a}) {a₁₀ = a} {a₁₁ = a} (refl {x = a}) (refl {x = a}) (refl {x = a}))
+    (pA : (g : ⟨ G ⟩) → SquareP (λ i j → A (surf g i j)) {a₀₀ = a} {a₀₁ = a} (refl {x = a}) {a₁₀ = a} {a₁₁ = a} (refl {x = a}) (refl {x = a}) (refl {x = a}))
     (b : B²) → A b
   elimB²grpd grpd a pA base = a
   elimB²grpd grpd a pA (surf g i j) = pA g i j

@@ -27,24 +27,24 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
   _⨀_ = G.op
   data B : Type ℓ where
     base : B
-    path : G.type → base ≡ base
-    conc : (g h : G.type) → Square (path g) (path (g ⨀ h)) refl (path h)
+    path : ⟨ Ggrp ⟩ → base ≡ base
+    conc : (g h : ⟨ Ggrp ⟩) → Square (path g) (path (g ⨀ h)) refl (path h)
     groupoid : (p q : base ≡ base) (r s : p ≡ q) → r ≡ s
 
-  conc' : (g h : G.type) → path g ∙ path h ≡ path (g ⨀ h)
+  conc' : (g h : ⟨ Ggrp ⟩) → path g ∙ path h ≡ path (g ⨀ h)
   conc' g h = transport (PathP≡compPathR _ _ _) (conc g h)
 
   id : path G.id ≡ refl
-  id = L.idUniqueL (path G.id) (path G.id) ((transport (PathP≡compPathR _ _ _) (conc G.id G.id)) ∙ cong path (sym (G.lUnit G.id))) where
+  id = L.idUniqueL (path G.id) ((transport (PathP≡compPathR _ _ _) (conc G.id G.id)) ∙ cong path (sym (G.lUnit G.id))) where
     loopspace : Group {ℓ}
-    loopspace = (base ≡ base) , _∙_ , (groupoid , assoc) , refl , (λ x → sym (lUnit x)) , λ x → sym x , lCancel x
+    loopspace = (base ≡ base) , _∙_ , (groupoid , assoc) , refl , (λ x → sym (rUnit x) , sym (lUnit x)) , λ x → sym x , rCancel x , lCancel x
     module L = GroupLemmas loopspace
 
   recB : ∀ {ℓ'} → {A : Type ℓ'} →
     (a : A) →
-    (p : G.type → a ≡ a) →
+    (p : ⟨ Ggrp ⟩ → a ≡ a) →
     (idA : p G.id ≡ refl) →
-    (concA : (g h : G.type) → Square (p g) (p (g ⨀ h)) refl (p h))
+    (concA : (g h : ⟨ Ggrp ⟩) → Square (p g) (p (g ⨀ h)) refl (p h))
     (grpdA : (p q : a ≡ a) → (r s : p ≡ q) → r ≡ s) →
     B → A
   recB a pA idA concA grpdA base = a
@@ -53,7 +53,7 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
   recB a pA idA concA grpdA (groupoid p q r s i j k) = grpdA (X p) (X q) (cong X r) (cong X s) i j k where
     X = cong (recB a pA idA concA grpdA)
 
-  elimBSet : ∀ {ℓ'} → {A : B → Type ℓ'} → ((b : B) → isSet (A b)) → (a : A base) → ((g : G.type) → PathP (λ i → A (path g i)) a a) → (b : B) → A b
+  elimBSet : ∀ {ℓ'} → {A : B → Type ℓ'} → ((b : B) → isSet (A b)) → (a : A base) → ((g : ⟨ Ggrp ⟩) → PathP (λ i → A (path g i)) a a) → (b : B) → A b
   elimBSet {ℓ'} {A} set a pA base = a
   elimBSet {ℓ'} {A} set a pA (path g i) = pA g i
   elimBSet {ℓ'} {A} set a pA (conc g h i j) = lemma i j where
@@ -78,16 +78,16 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
 
   Code : B → Type ℓ
   Code = recB
-    G.type
+    ⟨ Ggrp ⟩
     (λ g → isoToPath (iso
       (λ x → x ⨀ g)
       (λ x → x ⨀ G.inv g)
-      (λ x → G.assoc _ _ _ ∙ cong (λ y → x ⨀ y) (G.lCancel g) ∙ sym (G.rUnit x))
-      (λ x → G.assoc _ _ _ ∙ cong (λ y → x ⨀ y) (G.rCancel g) ∙ sym (G.rUnit x))
+      (λ x → sym (G.assoc _ _ _) ∙ cong (λ y → x ⨀ y) (G.lCancel g) ∙ sym (G.rUnit x))
+      (λ x → sym (G.assoc _ _ _) ∙ cong (λ y → x ⨀ y) (G.rCancel g) ∙ sym (G.rUnit x))
     ))
     (cong ua (equivEq _ _ (funExt λ x → sym (G.rUnit x))) ∙ uaIdEquiv)
     (λ g h → transport (sym (PathP≡compPathR _ _ _)) (sym (uaCompEquiv _ _) ∙ cong ua (equivEq _ _ (funExt λ x →
-      G.assoc _ _ _))))
+      sym (G.assoc _ _ _)))))
     (λ p q r s → isOfHLevel≡ 2 G.set G.set p q r s)
 
   private
@@ -101,14 +101,14 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
     decodeTypeSet b = isSetΠ λ _ → isGroupoidB _ _
 
     abstract
-      decodePath : (g : G.type) → PathP (λ i → decodeType (path g i)) path path
+      decodePath : (g : ⟨ Ggrp ⟩) → PathP (λ i → decodeType (path g i)) path path
       decodePath g = toPathP (
                (transport (λ i → Code (path g i) → (base ≡ path g i)) path)
                  ≡⟨ transport→ B Code (λ x → base ≡ x) base base (path g) path ⟩
                (λ x → transport (λ i → base ≡ path g i) (path (transport (λ i → Code (path g (~ i))) x)))
                  ≡⟨ (funExt λ x → transport≡p (path g) (path (transport (λ i₁ → Code (path g (~ i₁))) x)) ∙
                     cong (λ y → path (y ⨀ G.inv g) ∙ path g) (transportRefl _) ∙
-                    conc' _ _ ∙ cong path ((G.assoc _ _ _ ∙ cong (λ y → x ⨀ y) (G.lCancel g) ∙ (sym (G.rUnit x))))) ⟩
+                    conc' _ _ ∙ cong path ((sym (G.assoc _ _ _) ∙ cong (λ y → x ⨀ y) (G.lCancel g) ∙ (sym (G.rUnit x))))) ⟩
                path ∎)
 
     decode : (b : B) → decodeType b
@@ -122,22 +122,22 @@ module B {ℓ : Level} (Ggrp : Group {ℓ}) where
       CodeSet : (b : B) → isSet (Code b)
       CodeSet = elimBProp (λ _ → isPropIsSet) G.set
 
-  ΩBG→∙G : Ω (B , base) →∙ (G.type , G.id)
+  ΩBG→∙G : Ω (B , base) →∙ (⟨ Ggrp ⟩ , G.id)
   ΩBG→∙G = encode base , transportRefl G.id
 
-  G→∙ΩBG : (G.type , G.id) →∙ Ω (B , base)
+  G→∙ΩBG : (⟨ Ggrp ⟩ , G.id) →∙ Ω (B , base)
   G→∙ΩBG = decode base , id
 
-  G≃ΩBG : G.type ≃ fst (Ω (B , base))
+  G≃ΩBG : ⟨ Ggrp ⟩ ≃ fst (Ω (B , base))
   G≃ΩBG = isoToEquiv (iso (decode base) (encode base) (sec base) (ret base))
 
-  ΩBG≃G : fst (Ω (B , base)) ≃ G.type
+  ΩBG≃G : fst (Ω (B , base)) ≃ ⟨ Ggrp ⟩
   ΩBG≃G = invEquiv G≃ΩBG
 
 
 module Test {ℓ : Level} (A : Type ℓ) (a : A) (grpd : isGroupoid A) (conn : (x y : A) → ∥ x ≡ y ∥) where
   G : Group {ℓ}
-  G = (a ≡ a) , _∙_ , (grpd a a , assoc) , refl , (λ x → sym (lUnit x)) , λ x → (sym x) , lCancel x
+  G = (a ≡ a) , _∙_ , (grpd a a , assoc) , refl , (λ x → sym (rUnit x) , sym (lUnit x)) , λ x → (sym x) , rCancel x , lCancel x
 
   module BG = B G
 

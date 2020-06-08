@@ -33,7 +33,7 @@ isPropIsTorsor : ∀ {ℓ ℓ' : Level} (G : Group {ℓ}) (r : RAction {ℓ' = �
 isPropIsTorsor G r = isProp× propTruncIsProp (isProp× isPropIsSet (isPropΠ2 (λ _ _ → isPropIsContr)))
 
 principalTorsor : ∀ {ℓ} (G : Group {ℓ}) → RAction G
-principalTorsor G = ⟨ G ⟩ , _⨀_ , assocG , λ x → sym (rUnitG x) where
+principalTorsor G = ⟨ G ⟩ , _⨀_ , (λ _ _ _ → sym (assocG _ _ _)) , λ x → sym (rUnitG x) where
   _⨀_ = GroupLemmas.op G
   assocG = GroupLemmas.assoc G
   rUnitG = GroupLemmas.rUnit G
@@ -47,7 +47,7 @@ isTorsorPrincipalTorsor G =
     trans : (x y : ⟨ G ⟩) → ⟨ G ⟩
     trans x y = inv x ⨀ y
     transProof : (x y : ⟨ G ⟩) → x ⨀ trans x y ≡ y
-    transProof x y = sym (assocG _ _ _) ∙ cong (λ r → r ⨀ y) (rCancelG x) ∙ sym (lUnitG y)
+    transProof x y = assocG _ _ _ ∙ cong (λ r → r ⨀ y) (rCancelG x) ∙ sym (lUnitG y)
 
 module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction {ℓ' = ℓ'} Ggrp) (tors¹ : isTorsor Ggrp T¹) (tors² : isTorsor Ggrp T²) where
   module G = GroupLemmas Ggrp
@@ -85,7 +85,7 @@ module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction
     ((x : X¹) → transport (cong (λ r → ⟨ Ggrp ⟩ → r) p) (_⋆¹_ x) ≡ _⋆²_ (transport p x))
       ≡⟨ (λ i → (x : X¹) → lemma x i ≡ _⋆²_ (transport p x)) ⟩
     ((x : X¹) → (λ g → transport p (x ⋆¹ g)) ≡ _⋆²_ (transport p x))
-      ≡⟨ sym (λ i → (x : X¹) → funExtPath {f = λ g → transport p (x ⋆¹ g)} {g = _⋆²_ (transport p x)} i) ⟩
+      ≡⟨ sym (λ i → (x : X¹) → funExtPath {B = λ _ _ → fst T²} {f = λ g → transport p (x ⋆¹ g)} {g = _⋆²_ (transport p x)} i) ⟩
     ((x : X¹) (g : ⟨ Ggrp ⟩) → transport p (x ⋆¹ g) ≡ (transport p x) ⋆² g) ∎
     where
     lemma : (x : X¹) → transport (cong (λ r → ⟨ Ggrp ⟩ → r) p) (_⋆¹_ x) ≡ (λ g → transport p (x ⋆¹ g))

@@ -39,7 +39,7 @@ gerbe-comm : (G : Gerbe {ℓ}) → ((x : ⟨ G ⟩) → (p q : x ≡ x) → p �
 gerbe-comm G = snd (snd (snd (snd G)))
 
 π : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → AbGroup {ℓ}
-π G x = (x ≡ x) , _∙_ , ((gerbe-grpd G _ _ , assoc) , refl , (λ x → sym (lUnit x)) , λ x → sym x , lCancel x) , gerbe-comm G x
+π G x = (x ≡ x) , _∙_ , ((gerbe-grpd G _ _ , assoc) , refl , (λ x → sym (rUnit x) , sym (lUnit x)) , λ x → sym x , rCancel x , lCancel x) , gerbe-comm G x
 
 module S (G : Gerbe {ℓ}) where
   X = ⟨ G ⟩
@@ -71,7 +71,7 @@ module S (G : Gerbe {ℓ}) where
     ! = s x y .snd
     _⋆_ = group-operation H
     _⨀_ = group-operation H'
-    morph : isMorphism H H' (fst (s x y .fst))
+    morph : isGroupHom H H' (fst (s x y .fst))
     morph = λ p q → recPropTrunc (group-is-set H' _ _) (λ r → 
       f (p ⋆ q)                            ≡⟨ ! r (p ∙ q) ⟩
       sym r ∙ (p ∙ q) ∙ r                  ≡⟨ (λ i → sym r ∙ (assoc p q r (~ i))) ⟩
@@ -83,7 +83,7 @@ module S (G : Gerbe {ℓ}) where
 
 linked-by-ab : (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) → Type (ℓ-max ℓ ℓ')
 linked-by-ab {ℓ} {ℓ'} G Aab = Σ[ e ∈ ((x : ⟨ G ⟩) → GroupIso A (AbGroup→Group (π G x))) ]
-  ((x y : ⟨ G ⟩) → groupIsoComp A (H x) (H y) (e x) (s-iso x y) ≡ e y) where
+  ((x y : ⟨ G ⟩) → compGroupIso A (H x) (H y) (e x) (s-iso x y) ≡ e y) where
   open S G
   A = AbGroup→Group Aab
   H : (x : _) → _
@@ -91,7 +91,7 @@ linked-by-ab {ℓ} {ℓ'} G Aab = Σ[ e ∈ ((x : ⟨ G ⟩) → GroupIso A (AbG
 
 link-by-π : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → linked-by-ab G (π G x)
 link-by-π G x = (λ y → s-iso x y) , λ y z →
-  ΣProp≡ (λ eq → isPropIsMorphism (AbGroup→Group (π G x)) (AbGroup→Group (π G z)) (eq .fst))
+  groupIsoEq (AbGroup→Group (π G x)) (AbGroup→Group (π G z)) _ _
   (equivEq _ _ (funExt λ t → recPropTrunc (gerbe-grpd G _ _ _ _) (λ py → recPropTrunc (gerbe-grpd G _ _ _ _) (λ pz →
     transport (λ i → s-fun (py i) (pz i) (s-fun x (py i) t) ≡ s-fun x (pz i) t)
       (! _)
@@ -116,7 +116,7 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
     f : linked-by-ab G B → GroupIso Agrp Bgrp
     f (eB , condB) = isContrT .fst .fst where
       pre-f : (x : ⟨ G ⟩) → GroupIso Agrp Bgrp
-      pre-f x = groupIsoComp Agrp (AbGroup→Group (π G x)) Bgrp (eA x) (groupIsoInv Bgrp (AbGroup→Group (π G x)) (eB x))
+      pre-f x = compGroupIso Agrp (AbGroup→Group (π G x)) Bgrp (eA x) (invGroupIso Bgrp (AbGroup→Group (π G x)) (eB x))
       
       T : Type _
       T = Σ[ i ∈ (GroupIso Agrp Bgrp) ] ((x : ⟨ G ⟩) (g : Ab⟨ A ⟩) → i .fst .fst g ≡ pre-f x .fst .fst g )
@@ -125,24 +125,24 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
       isContrT = recPropTrunc isPropIsContr (λ x₀ → (pre-f x₀ , λ x g → recPropTrunc (group-is-set Bgrp _ _)
         (λ p → cong (λ ok → pre-f ok .fst .fst g) p) (gerbe-conn G x₀ x)) ,
         λ f → ΣProp≡ (λ x → isPropΠ λ x₁ → isPropΠ λ g → group-is-set Bgrp _ _)
-        (ΣProp≡ (λ _ → isPropIsMorphism Agrp Bgrp _) (equivEq _ _ (funExt λ g → sym (snd f _ g))))) (gerbe-inhabited G)
+        (groupIsoEq Agrp Bgrp _ _ (equivEq _ _ (funExt λ g → sym (snd f _ g))))) (gerbe-inhabited G)
 
     assocGroupComp : ∀ {ℓ ℓ' ℓ'' ℓ''' : Level} → (F : Group {ℓ}) (G : Group {ℓ'}) (H : Group {ℓ''}) (I : Group {ℓ'''})
       (f : GroupIso F G) (g : GroupIso G H) (h : GroupIso H I) →
-      groupIsoComp F G I f (groupIsoComp G H I g h) ≡ groupIsoComp F H I (groupIsoComp F G H f g) h
-    assocGroupComp F G H I f g h = ΣProp≡ (λ x → isPropIsMorphism F I (x .fst)) (equivEq _ _ refl)
+      compGroupIso F G I f (compGroupIso G H I g h) ≡ compGroupIso F H I (compGroupIso F G H f g) h
+    assocGroupComp F G H I f g h = groupIsoEq F I _ _ (equivEq _ _ refl)
 
     g : GroupIso Agrp Bgrp → linked-by-ab G B
     g i = eB , coherence where
-      j = groupIsoInv Agrp Bgrp i
+      j = invGroupIso Agrp Bgrp i
   
       eB : (x : ⟨ G ⟩) → GroupIso Bgrp (AbGroup→Group (π G x))
-      eB x = groupIsoComp Bgrp Agrp (AbGroup→Group (π G x)) j (eA x)
+      eB x = compGroupIso Bgrp Agrp (AbGroup→Group (π G x)) j (eA x)
 
       coherence : _
       coherence x y =
         sym (assocGroupComp Bgrp Agrp (AbGroup→Group (π G x)) (AbGroup→Group (π G y)) j (eA x) (S.s-iso G x y)) ∙
-        cong (λ ok → groupIsoComp Bgrp Agrp (AbGroup→Group (π G y)) j ok) (condA x y)
+        cong (λ ok → compGroupIso Bgrp Agrp (AbGroup→Group (π G y)) j ok) (condA x y)
 
     sec : section f g
     sec i = {!!}
@@ -174,4 +174,3 @@ module tests (A : AbGroup {ℓ}) (G : B² A) where
   B2 = B² A
   carac : (G G' : B2) → (G ≡ G') ≃ (Σ (fst G ≡ fst G') (λ p → PathP (λ i → linked-by-ab (p i) A) (snd G) (snd G')))
   carac G G' = invEquiv Σ≃
-

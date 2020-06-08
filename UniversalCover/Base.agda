@@ -45,7 +45,7 @@ pathEqualityInTrunc0 {A = A} p q =
 
 UCPath≃ : ∀ {ℓ} {A : Pointed ℓ} → (x y : fst (UniversalCover A)) →
   (x ≡ y) ≃ (Σ[ p ∈ (fst x ≡ fst y) ] snd x ∙₀ ∣ p ∣₀ ≡ snd y)
-UCPath≃ {A = A} x y = compEquiv (invEquiv Σ≡) (pathToEquiv (cong (λ r → Σ (fst x ≡ fst y) r) (funExt λ p → PathP≡Path _ _ _ ∙ cong (λ r → r ≡ snd y) λ i → (lemma p) i (snd x)))) where
+UCPath≃ {A = A} x y = compEquiv (invEquiv Σ≃) (pathToEquiv (cong (λ r → Σ (fst x ≡ fst y) r) (funExt λ p → PathP≡Path _ _ _ ∙ cong (λ r → r ≡ snd y) λ i → (lemma p) i (snd x)))) where
   a = snd A
   lemma : (p : fst x ≡ fst y) → transport (λ i → ∥ a ≡ (p i) ∥₀) ≡ (λ α → α ∙₀ ∣ p ∣₀)
   lemma p = J (λ y p → transport (λ i → ∥ a ≡ (p i) ∥₀) ≡ (λ α → α ∙₀ ∣ p ∣₀))

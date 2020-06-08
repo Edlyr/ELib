@@ -63,7 +63,7 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
 
   -- Intermediate groups that will be used in the characterisation of ΩB
   ΩB : Group {ℓ-suc ℓ}
-  ΩB = Path B PT PT , _∙_ , (isGroupoidB PT PT , assoc) , refl , (λ p → sym (lUnit p)) , λ p → sym p , lCancel p
+  ΩB = Path B PT PT , _∙_ , (isGroupoidB PT PT , assoc) , refl , (λ p → sym (rUnit p) , sym (lUnit p)) , λ p → sym p , rCancel p , lCancel p
 
   G' : Group {ℓ}
   G' = DualGroup G
@@ -92,13 +92,13 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
 
   G'→preΩB : ⟨ G' ⟩ → ⟨ preΩB ⟩
   G'→preΩB g = isoToEquiv (iso (λ x → g ⨀ x) (λ x → inv g ⨀ x)
-    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.rCancel g)) ∙ Ggrp.assoc _ _ _))
-    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.lCancel g)) ∙ Ggrp.assoc _ _ _))) ,
-    λ x h → (g ⨀ (x ⨀ h)) ≡⟨ sym (Ggrp.assoc _ _ _) ⟩ ((g ⨀ x) ⨀ h) ∎
+    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.rCancel g)) ∙ sym (Ggrp.assoc _ _ _)))
+    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.lCancel g)) ∙ sym (Ggrp.assoc _ _ _)))) ,
+    λ x h → (g ⨀ (x ⨀ h)) ≡⟨ Ggrp.assoc _ _ _ ⟩ ((g ⨀ x) ⨀ h) ∎
 
-  isMorphism-G'→preΩB : isMorphism G' preΩB G'→preΩB
+  isMorphism-G'→preΩB : isGroupHom G' preΩB G'→preΩB
   isMorphism-G'→preΩB g g' = ΣProp≡ (λ f → lemmaProp {PT} {PT} f) (equivEq _ _ (funExt λ x →
-    ((g' ⨀ g) ⨀ x) ≡⟨ Ggrp.assoc g' g x ⟩ (g' ⨀ (g ⨀ x)) ∎))
+    ((g' ⨀ g) ⨀ x) ≡⟨ sym (Ggrp.assoc g' g x) ⟩ (g' ⨀ (g ⨀ x)) ∎))
 
   private
     retr : retract G'→preΩB preΩB→G'
@@ -121,4 +121,4 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
   ΩB≃preΩB = caracB≡ PT PT , caracB≡morphism
 
   ΩB≃G : GroupIso ΩB G
-  ΩB≃G = groupIsoComp ΩB preΩB G ΩB≃preΩB (groupIsoComp preΩB G' G (groupIsoInv G' preΩB G'≃preΩB) (groupIsoInv G G' (InvGroupIso G)))
+  ΩB≃G = compGroupIso ΩB preΩB G ΩB≃preΩB (compGroupIso preΩB G' G (invGroupIso G' preΩB G'≃preΩB) (invGroupIso G G' (DualGroupIso G)))
