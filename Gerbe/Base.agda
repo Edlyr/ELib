@@ -12,6 +12,7 @@ open import ELib.Group.Morphism
 open import Cubical.Data.Sigma
 --open import ELib.B1.MorphismDelooping
 --open import ELib.UsefulLemmas
+open import Cubical.Functions.Embedding
 
 private
   variable
@@ -113,19 +114,25 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
   test B = isoToEquiv (iso f g sec retr) where
     Bgrp = AbGroup→Group B
 
-    f : linked-by-ab G B → GroupIso Agrp Bgrp
-    f (eB , condB) = isContrT .fst .fst where
-      pre-f : (x : ⟨ G ⟩) → GroupIso Agrp Bgrp
-      pre-f x = compGroupIso Agrp (AbGroup→Group (π G x)) Bgrp (eA x) (invGroupIso Bgrp (AbGroup→Group (π G x)) (eB x))
+    pre-f : (linked-by-ab G B) → (x : ⟨ G ⟩) → GroupIso Agrp Bgrp
+    pre-f (eB , _) x = compGroupIso Agrp (AbGroup→Group (π G x)) Bgrp (eA x) (invGroupIso Bgrp (AbGroup→Group (π G x)) (eB x))
+      
+    f₀ : (l : linked-by-ab G B) → Σ[ i ∈ GroupIso Agrp Bgrp ] (((x : ⟨ G ⟩) (g : Ab⟨ A ⟩) → i .fst .fst g ≡ pre-f l x .fst .fst g ))
+    f₀ (eB , condB) = isContrT .fst where
+      pre-f₀ : (x : ⟨ G ⟩) → GroupIso Agrp Bgrp
+      pre-f₀ = pre-f (eB , condB)
       
       T : Type _
-      T = Σ[ i ∈ (GroupIso Agrp Bgrp) ] ((x : ⟨ G ⟩) (g : Ab⟨ A ⟩) → i .fst .fst g ≡ pre-f x .fst .fst g )
+      T = Σ[ i ∈ (GroupIso Agrp Bgrp) ] ((x : ⟨ G ⟩) (g : Ab⟨ A ⟩) → i .fst .fst g ≡ pre-f₀ x .fst .fst g )
 
       isContrT : isContr T
-      isContrT = recPropTrunc isPropIsContr (λ x₀ → (pre-f x₀ , λ x g → recPropTrunc (group-is-set Bgrp _ _)
-        (λ p → cong (λ ok → pre-f ok .fst .fst g) p) (gerbe-conn G x₀ x)) ,
+      isContrT = recPropTrunc isPropIsContr (λ x₀ → (pre-f₀ x₀ , λ x g → recPropTrunc (group-is-set Bgrp _ _)
+        (λ p → cong (λ ok → pre-f₀ ok .fst .fst g) p) (gerbe-conn G x₀ x)) ,
         λ f → ΣProp≡ (λ x → isPropΠ λ x₁ → isPropΠ λ g → group-is-set Bgrp _ _)
         (groupIsoEq Agrp Bgrp _ _ (equivEq _ _ (funExt λ g → sym (snd f _ g))))) (gerbe-inhabited G)
+
+    f : linked-by-ab G B → GroupIso Agrp Bgrp
+    f x = fst (f₀ x)
 
     assocGroupComp : ∀ {ℓ ℓ' ℓ'' ℓ''' : Level} → (F : Group {ℓ}) (G : Group {ℓ'}) (H : Group {ℓ''}) (I : Group {ℓ'''})
       (f : GroupIso F G) (g : GroupIso G H) (h : GroupIso H I) →
@@ -144,11 +151,65 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
         sym (assocGroupComp Bgrp Agrp (AbGroup→Group (π G x)) (AbGroup→Group (π G y)) j (eA x) (S.s-iso G x y)) ∙
         cong (λ ok → compGroupIso Bgrp Agrp (AbGroup→Group (π G y)) j ok) (condA x y)
 
-    sec : section f g
-    sec i = {!!}
+    abstract
+      sec : section f g
+      sec ((i , eq) , morph) = groupIsoEq Agrp Bgrp _ _ (equivEq _ _ (funExt λ a → recPropTrunc (group-is-set Bgrp _ _) (λ x →
+        f (g ((i , eq) , morph)) .fst .fst a
+          ≡⟨ snd (f₀ (g ((i , eq) , morph))) x a ⟩
+        pre-f (g ((i , eq) , morph)) x .fst .fst a
+          ≡⟨ refl ⟩
+        i (invEq (fst (eA x)) (fst (eA x) .fst a))
+          ≡⟨ cong i (secEq (fst (eA x)) a) ⟩
+        i a ∎
+        ) (gerbe-inhabited G)))
 
-    retr : retract f g
-    retr (eB , condB) = ΣProp≡ (λ e → isPropΠ2 λ x y → {!!}) {!!}
+      isSetGroupIso : ∀ {ℓ ℓ' : Level} (G₁ : Group {ℓ}) (G₂ : Group {ℓ'}) → isSet (GroupIso G₁ G₂)
+      isSetGroupIso G₁ G₂ = isSetΣ (isSetΣ (isOfHLevelΠ 2 λ _ → group-is-set G₂) λ _ → isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom G₁ G₂)
+
+      invEquivCompEquiv : ∀ {ℓ ℓ' ℓ'' : Level} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''} (e : A ≃ B) (f : B ≃ C) →
+        invEquiv (compEquiv e f) ≡ compEquiv (invEquiv f) (invEquiv e)
+      invEquivCompEquiv {A = A} e f = equivEq _ _ (funExt λ c → inj
+        (_
+          ≡⟨ retEq (compEquiv e f) c ⟩
+        c
+          ≡⟨ sym (retEq f c)  ⟩
+        _
+          ≡⟨ cong (f .fst) (sym (retEq e _)) ⟩
+        _ ∎)
+        ) where
+        inj : {x y : A} → f .fst (e .fst x) ≡ f .fst (e .fst y) → x ≡ y
+        inj {x} {y} = invEq (_ , (isEquiv→isEmbedding (compEquiv e f .snd) x y)) 
+
+      retr : retract f g
+      retr (eB , condB) =
+        ΣProp≡ (λ e → isPropΠ2 λ x y → isSetGroupIso Bgrp (AbGroup→Group (π G y)) _ (e y))
+        (funExt λ x → groupIsoEq Bgrp (AbGroup→Group (π G x)) _ _ (equivEq _ _ (funExt λ b →
+          g (f (eB , condB)) .fst x .fst .fst b
+            ≡⟨ refl ⟩
+          eA x .fst .fst (invEq (fst (f (eB , condB))) b)
+            ≡⟨ cong (λ U → eA x .fst .fst (invEq U b))
+              (fst (f (eB , condB))
+                ≡⟨ equivEq _ _ (funExt λ a → f₀ (eB , condB) .snd x a) ⟩
+              fst (pre-f (eB , condB) x) ∎)
+            ⟩
+          eA x .fst .fst (invEq (fst (pre-f (eB , condB) x)) b)
+            ≡⟨ refl ⟩
+          compEquiv (invEquiv (compEquiv (fst (eA x)) (invEquiv (fst (eB x))))) (fst (eA x)) .fst b
+            ≡⟨ cong (λ F → F .fst b) (
+              compEquiv (invEquiv (compEquiv (fst (eA x)) (invEquiv (fst (eB x))))) (fst (eA x))
+                ≡⟨ cong (λ F → compEquiv F (fst (eA x))) (invEquivCompEquiv (fst (eA x)) (invEquiv (fst (eB x)))) ⟩
+              compEquiv (compEquiv (invEquiv (invEquiv (fst (eB x)))) (invEquiv (fst (eA x)))) (fst (eA x))
+                ≡⟨ equivEq _ _ refl ⟩
+              compEquiv (compEquiv (fst (eB x)) (invEquiv (fst (eA x)))) (fst (eA x))
+                ≡⟨ equivEq _ _ refl ⟩
+              compEquiv (fst (eB x)) (compEquiv (invEquiv (fst (eA x))) (fst (eA x)))
+                ≡⟨ cong (compEquiv (fst (eB x))) (equivEq (compEquiv (invEquiv (fst (eA x))) (fst (eA x))) (idEquiv _) (funExt (retEq (fst (eA x))))) ⟩
+              compEquiv (fst (eB x)) (idEquiv _)
+                ≡⟨ equivEq _ _ refl ⟩
+              fst (eB x) ∎)
+            ⟩
+          eB x .fst .fst b ∎
+        )))
   
 
 {-postulate
