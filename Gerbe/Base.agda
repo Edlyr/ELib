@@ -13,10 +13,15 @@ open import Cubical.Data.Sigma
 --open import ELib.B1.MorphismDelooping
 --open import ELib.UsefulLemmas
 open import Cubical.Functions.Embedding
+open import ELib.UsefulLemmas
 
 private
   variable
     ℓ ℓ' ℓ'' : Level
+
+isSetGroupIso : ∀ {ℓ ℓ' : Level} (G₁ : Group {ℓ}) (G₂ : Group {ℓ'}) → isSet (GroupIso G₁ G₂)
+isSetGroupIso G₁ G₂ = isSetΣ (isSetΣ (isOfHLevelΠ 2 λ _ → group-is-set G₂) λ _ → isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom G₁ G₂)
+
 
 isGerbe : Type ℓ → Type ℓ
 isGerbe X = ∥ X ∥ × isGroupoid X × ((x y : X) → ∥ x ≡ y ∥) × ((x : X) → (p q : x ≡ x) → p ∙ q ≡ q ∙ p)
@@ -162,10 +167,7 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
           ≡⟨ cong i (secEq (fst (eA x)) a) ⟩
         i a ∎
         ) (gerbe-inhabited G)))
-
-      isSetGroupIso : ∀ {ℓ ℓ' : Level} (G₁ : Group {ℓ}) (G₂ : Group {ℓ'}) → isSet (GroupIso G₁ G₂)
-      isSetGroupIso G₁ G₂ = isSetΣ (isSetΣ (isOfHLevelΠ 2 λ _ → group-is-set G₂) λ _ → isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom G₁ G₂)
-
+        
       invEquivCompEquiv : ∀ {ℓ ℓ' ℓ'' : Level} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''} (e : A ≃ B) (f : B ≃ C) →
         invEquiv (compEquiv e f) ≡ compEquiv (invEquiv f) (invEquiv e)
       invEquivCompEquiv {A = A} e f = equivEq _ _ (funExt λ c → inj
@@ -211,22 +213,31 @@ module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
           eB x .fst .fst b ∎
         )))
   
-
-{-postulate
-  AbGroup-ua : (G G' : AbGroup {ℓ}) → GroupIso (AbGroup→Group G) (AbGroup→Group G') ≃ (G ≡ G')
+AbGroup-ua : (G G' : AbGroup {ℓ}) → GroupIso (AbGroup→Group G) (AbGroup→Group G') ≃ (G ≡ G')
+AbGroup-ua = AbGroupPath
 
 Π : (G : Gerbe {ℓ}) → Σ[ A ∈ AbGroup {ℓ} ] (linked-by-ab G A)
 Π {ℓ} G = fst contr where
   type = Σ[ A ∈ AbGroup {ℓ} ] (linked-by-ab G A)
+  type2 = λ (A : type) → Σ[ B ∈ AbGroup {ℓ} ] (GroupIso (AbGroup→Group (fst A)) (AbGroup→Group B))
+  type3 = λ (A : type) → Σ[ B ∈ AbGroup {ℓ} ] (fst A ≡ B)
+  
+  type≃type2 : (A : type) → type ≃ type2 A
+  type≃type2 (A , l) = congΣEquiv λ B → test G A l B
+  
+  type2≃type3 : (A : type) → type2 A ≃ type3 A
+  type2≃type3 A = congΣEquiv λ B → AbGroup-ua (fst A) B
+
+  isContr-type3 : (A : type) → isContr (type3 A)
+  isContr-type3 A = (fst A , refl) , λ B → ΣPathP (snd B , λ i j → snd B (i ∧ j))
+
   contr : isContr type
-  contr = recPropTrunc isPropIsContr (λ x₀ → (π G x₀ , link-by-π G x₀) , λ A → {!!}
-  --ΣPathP ((fst (AbGroup-ua (π G x₀) (A .fst)) (groupIsoInv (AbGroup→Group (A .fst)) (AbGroup→Group (π G x₀)) (A .snd .fst x₀))) , {!!})
-    ) (fst (snd G)) where
-
-
-  lemma : (A : AbGroup {ℓ}) → (linked-by-ab G A) → (B : AbGroup {ℓ}) → (linked-by-ab G B) ≃ (GroupIso (AbGroup→Group A) (AbGroup→Group B))
-  lemma A link B = {!!}
--}
+  contr = recPropTrunc isPropIsContr
+    (λ x₀ → isOfHLevelRespectEquiv 0 (invEquiv (
+      compEquiv (type≃type2 (π G x₀ , link-by-π G x₀)) (type2≃type3 (π G x₀ , link-by-π G x₀))))
+      (isContr-type3 (π G x₀ , link-by-π G x₀))
+    )
+    (fst (snd G))
 
 B² : (AbGroup {ℓ}) → Type (ℓ-suc ℓ)
 B² {ℓ} A = Σ[ G ∈ Gerbe {ℓ} ] (linked-by-ab G A)
@@ -235,3 +246,44 @@ module tests (A : AbGroup {ℓ}) (G : B² A) where
   B2 = B² A
   carac : (G G' : B2) → (G ≡ G') ≃ (Σ (fst G ≡ fst G') (λ p → PathP (λ i → linked-by-ab (p i) A) (snd G) (snd G')))
   carac G G' = invEquiv Σ≃
+
+  ΣProp≡P : {ℓ ℓ' : Level} {A A' : Type ℓ} {B : A → Type ℓ'} {B' : A' → Type ℓ'}
+    (p : A ≡ A') (q : PathP (λ i → p i → Type ℓ') B B') → (x : Σ A B) (y : Σ A' B') →
+    PathP (λ i → Σ (p i) (q i)) x y → PathP (λ i → p i) (fst x) (fst y)
+  ΣProp≡P p q x y s = λ i → fst (s i)
+  
+  ΣProp≡P2 : {ℓ ℓ' : Level} {A A' : Type ℓ} {B : A → Type ℓ'} {B' : A' → Type ℓ'}
+    (p : A ≡ A') (q : PathP (λ i → p i → Type ℓ') B B') → (x : Σ A B) (y : Σ A' B') →
+    ((i : I) (α : p i) → isProp (q i α)) →
+    PathP (λ i → p i) (fst x) (fst y) → PathP (λ i → Σ (p i) (q i)) x y 
+  ΣProp≡P2 p q x y prop s = λ i → (s i) , prop i (s i)
+    (transp (λ j → q (i ∧ j) (s (i ∧ j))) (~ i) (snd x))
+    (transp (λ j → q (i ∨ ~ j) (s (i ∨ ~ j))) i (snd y)) i
+
+  ΣProp≃P : {ℓ ℓ' : Level} {A A' : Type ℓ} {B : A → Type ℓ'} {B' : A' → Type ℓ'}
+    (p : A ≡ A') (q : PathP (λ i → p i → Type ℓ') B B') → (x : Σ A B) (y : Σ A' B') →
+    ((i : I) (α : p i) → isProp (q i α)) →
+    PathP (λ i → p i) (fst x) (fst y) ≃ PathP (λ i → Σ (p i) (q i)) x y
+  ΣProp≃P {B' = B'} p q x y prop = isoToEquiv
+    (iso
+      (ΣProp≡P2 p q x y prop)
+      (ΣProp≡P p q x y)
+      (λ r i j → fst (r j) , right r i j )
+      (λ r → refl)
+    ) where
+      right : (r : _) → (λ i → prop i (fst (r i))
+        (transp (λ j → q (i ∧ j) (fst (r (i ∧ j)))) (~ i) (snd x))
+        (transp (λ j → q (i ∨ ~ j) (fst (r (i ∨ ~ j)))) i (snd y)) i) ≡ λ i → snd (r i)
+      right r = lemma _ _ where
+        lemma : isProp (PathP (λ i → q i (fst (r i))) (snd x) (snd y))
+        lemma = transport (cong isProp (sym (PathP≡Path _ _ _))) (isProp→isSet (prop i1 (fst y)) _ _)
+
+  carac2 : (G G' : B2) →
+    (Σ (fst G ≡ fst G') λ p → PathP (λ i → linked-by-ab (p i) A) (snd G) (snd G'))
+      ≃
+    (Σ (fst G ≡ fst G') λ p → PathP (λ i → (x : ⟨ p i ⟩) → GroupIso (AbGroup→Group A) (AbGroup→Group (π (p i) x))) (G .snd .fst) (G' .snd .fst))
+    --transport (λ i → linked-by-ab (p i) A) (G .snd) .fst ≡ (G' .snd) .fst)
+  carac2 G G' = congΣEquiv λ p → invEquiv (ΣProp≃P _ _ _ _ λ i α → isPropΠ2 λ x y → isSetGroupIso (AbGroup→Group A) (AbGroup→Group (π (p i) y)) _ _ )
+
+  --link-iso : (G G' : B2) → Type _
+  --link-iso (G , e , _) (G' , f , _) = Σ[ p ∈ (⟨ G ⟩ ≃ ⟨ G' ⟩) ] ((x : ⟨ G ⟩) →  {!!} ≡ f (fst p x))
