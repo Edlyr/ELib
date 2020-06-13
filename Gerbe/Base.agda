@@ -22,12 +22,25 @@ private
 isSetGroupIso : ∀ {ℓ ℓ' : Level} (G₁ : Group {ℓ}) (G₂ : Group {ℓ'}) → isSet (GroupIso G₁ G₂)
 isSetGroupIso G₁ G₂ = isSetΣ (isSetΣ (isOfHLevelΠ 2 λ _ → group-is-set G₂) λ _ → isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom G₁ G₂)
 
+-------------------
 
 isGerbe : Type ℓ → Type ℓ
 isGerbe X = ∥ X ∥ × isGroupoid X × ((x y : X) → ∥ x ≡ y ∥) × ((x : X) → (p q : x ≡ x) → p ∙ q ≡ q ∙ p)
 
+isPropIsGerbe : (X : Type ℓ) → isProp (isGerbe X)
+isPropIsGerbe X =
+  isProp×
+    propTruncIsProp
+    (isPropΣ
+      isPropIsGroupoid
+      (λ grpd → isProp×
+        (isPropΠ2 λ x y → propTruncIsProp)
+        (isPropΠ λ x → isPropΠ2 λ p q → grpd x x (p ∙ q) (q ∙ p))
+      )
+    )
+
 Gerbe : Type (ℓ-suc ℓ)
-Gerbe {ℓ} = Σ (Type ℓ) isGerbe
+Gerbe {ℓ} = TypeWithStr ℓ isGerbe
 
 ⟨_⟩ : Gerbe → Type ℓ
 ⟨_⟩ = fst

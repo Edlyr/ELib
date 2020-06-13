@@ -4,21 +4,20 @@ module ELib.Gerbe.Link where
 
 open import Cubical.Foundations.Everything
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ; elim to elimPropTrunc)
---open import Cubical.Homotopy.Loopspace
---open import Cubical.Structures.Group
 open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
 open import ELib.Group.Morphism
 open import Cubical.Data.Sigma
---open import ELib.B1.MorphismDelooping
---open import ELib.UsefulLemmas
 open import Cubical.Functions.Embedding
 open import ELib.UsefulLemmas
 open import ELib.Gerbe.Base
+open import Cubical.Foundations.SIP renaming (SNS-PathP to SNS)
 
 private
   variable
     ℓ ℓ' ℓ'' : Level
+    
+GRP = AbGroup→Group
 
 linked-by-ab : (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) → Type (ℓ-max ℓ ℓ')
 linked-by-ab {ℓ} {ℓ'} G Aab = Σ[ e ∈ ((x : ⟨ G ⟩) → GroupIso A (AbGroup→Group (π G x))) ]
@@ -27,6 +26,72 @@ linked-by-ab {ℓ} {ℓ'} G Aab = Σ[ e ∈ ((x : ⟨ G ⟩) → GroupIso A (AbG
   A = AbGroup→Group Aab
   H : (x : _) → _
   H x = AbGroup→Group (π G x)
+
+linkStructure : (A : AbGroup {ℓ'}) → Type ℓ → Type _
+linkStructure {ℓ} A = add-to-structure isGerbe (λ X gerbe → linked-by-ab (X , gerbe) A)
+
+B² : {ℓ : Level} → (A : AbGroup {ℓ'}) → Type _
+B² {ℓ} A = TypeWithStr ℓ (linkStructure A)
+
+linkHom : ∀ {ℓ ℓ'} → (A : AbGroup {ℓ}) → StrHom {ℓ = ℓ'} (linkStructure A) _
+linkHom A (X₁ , gerbe₁ , l₁ , _) (X₂ , gerbe₂ , l₂ , _) f =
+  (x : X₁) → cong f ∘ (l₁ x .fst .fst) ≡ l₂ (f x) .fst .fst
+
+linkIso : ∀ {ℓ ℓ'} → (A : AbGroup {ℓ}) → StrIso {ℓ = ℓ'} (linkStructure A) _
+linkIso A = StrHom→StrIso (linkHom A)
+
+abstract
+  linkSNS-≡ : (A : AbGroup {ℓ}) → SNS-≡ {ℓ₁ = ℓ'} (linkStructure A) (linkIso A)
+  linkSNS-≡ A {X} (gerbe₁ , l₁) (gerbe₂ , l₂) = transport path (test gerbe₂ l₁' l₂) where
+    p : gerbe₁ ≡ gerbe₂
+    p = isPropIsGerbe X _ _
+    l₁' : _
+    l₁' = transp (λ i → linked-by-ab (X , p i) A) i0 l₁
+  
+    ok : (gerbe : isGerbe X) (l : linked-by-ab (X , gerbe) A) → linkStructure A X
+    ok gerbe l = (gerbe , l)
+    
+    wesh : ok gerbe₁ l₁ ≡ ok gerbe₂ l₁'
+    wesh i = ok (p i) (transp (λ j → linked-by-ab (X , p (i ∧ j)) A) (~ i) l₁)
+    
+    path :
+      ((linkIso A (X , gerbe₂ , l₁') (X , gerbe₂ , l₂) (idEquiv X)) ≃ (ok gerbe₂ l₁' ≡ ok gerbe₂ l₂)) ≡
+      ((linkIso A (X , gerbe₁ , l₁ ) (X , gerbe₂ , l₂) (idEquiv X)) ≃ (ok gerbe₁ l₁ ≡ ok gerbe₂ l₂))
+    path i = (linkIso A (X , wesh (~ i)) (X , gerbe₂ , l₂) (idEquiv X)) ≃ (wesh (~ i) ≡ ok gerbe₂ l₂)
+  
+    π₁ : (x : X) → Group
+    π₁ x = GRP (π (X , gerbe₁) x)
+  
+    test : (gerbe : isGerbe X) (l₁ l₂ : linked-by-ab (X , gerbe) A) →
+      linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X) ≃ (ok gerbe l₁ ≡ ok gerbe l₂)
+    test gerbe l₁ l₂ = isoToEquiv (iso Iso→≡ ≡→Iso sec retr) where
+      Iso→≡  : linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X) → ok gerbe l₁ ≡ ok gerbe l₂
+      Iso→≡ link-iso = ΣPathP (refl , ΣProp≡
+        (λ _ → isPropΠ2 λ _ y → isSetGroupIso (GRP A) (π₁ y) _ _)
+        (funExt λ x → groupIsoEq (GRP A) (π₁ x) _ _ (equivEq _ _ (link-iso x)))
+       )
+  
+      ≡→Iso : ok gerbe l₁ ≡ ok gerbe l₂ → linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X)
+      ≡→Iso p x i = snd (p i) .fst x .fst .fst
+  
+      isSetLinkStructure : isSet (linkStructure A X)
+      isSetLinkStructure =
+        isSetΣ (isProp→isSet (isPropIsGerbe X)) λ gerbe →
+        isSetΣ
+          (isSetΠ λ x → isSetGroupIso (GRP A) (π₁ x))
+          λ f → isSetΠ2 λ y z → isProp→isSet (isSetGroupIso (GRP A) (π₁ z) _ _)
+  
+      sec : section Iso→≡ ≡→Iso
+      sec p = isSetLinkStructure _ _ _ _
+  
+      isPropLinkIso : isProp (linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X))
+      isPropLinkIso = isPropΠ λ x → isSetΠ (λ g → gerbe-grpd (X , gerbe) _ _) _ _
+  
+      retr : retract Iso→≡ ≡→Iso
+      retr link-iso = isPropLinkIso _ _
+
+  linkSNS : (A : AbGroup {ℓ}) → SNS {ℓ₁ = ℓ'} (linkStructure A) (linkIso A)
+  linkSNS A = SNS-≡→SNS-PathP (linkIso A) (linkSNS-≡ A)
 
 link-by-π : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → linked-by-ab G (π G x)
 link-by-π G x = (λ y → s-iso x y) , λ y z →
@@ -43,7 +108,7 @@ link-by-π G x = (λ y → s-iso x y) , λ y z →
   ! t = snd (s x x) refl t ∙ sym (rUnit _ ∙ lUnit _)
 
 -------------------
-
+{-
 module _ (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (ℒ : linked-by-ab G A) where
   eA = fst ℒ
   condA = snd ℒ
@@ -219,3 +284,4 @@ module tests (A : AbGroup {ℓ}) (G : B² A) where
 
   --link-iso : (G G' : B2) → Type _
   --link-iso (G , e , _) (G' , f , _) = Σ[ p ∈ (⟨ G ⟩ ≃ ⟨ G' ⟩) ] ((x : ⟨ G ⟩) →  {!!} ≡ f (fst p x))
+-}
