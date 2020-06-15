@@ -9,6 +9,7 @@ open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
 open import ELib.Group.Morphism
 open import Cubical.Data.Sigma
 open import Cubical.Functions.Embedding
+open import Cubical.Functions.Surjection
 open import ELib.UsefulLemmas
 open import ELib.Gerbe.Base
 open import Cubical.Foundations.SIP renaming (SNS-PathP to SNS)
@@ -106,6 +107,87 @@ link-by-π G x = (λ y → s-iso x y) , λ y z →
   s-fun x y = s x y .fst .fst
   ! : (t : _) → s-fun x x t ≡ t
   ! t = snd (s x x) refl t ∙ sym (rUnit _ ∙ lUnit _)
+
+
+open import ELib.ConcreteGroup.Base
+open import ELib.ConcreteGroup.DeloopMorph
+
+module _ (A : AbGroup {ℓ'}) (G : B² {ℓ'} {ℓ} A) where
+  X = fst G
+  gerbe : Gerbe
+  gerbe = (fst G , fst (snd G))
+  link = snd (snd G)
+  l = fst (link)
+  equiv1 : Σ (fst G ≃ fst G) (λ f → (x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) ≃ (G ≡ G)
+  equiv1 = SIP (linkSNS A) G G
+
+  equiv2 : (f : fst G ≃ fst G) → ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) ≃ ∥ idEquiv X ≡ f ∥
+  equiv2 f = isoToEquiv (iso fun→ fun← sec retr) where
+    fun← : ∥ idEquiv X ≡ f ∥ → ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst)
+    fun← = recPropTrunc (isPropΠ λ x → isSetΠ (λ g → gerbe-grpd gerbe _ _) _ _)
+      λ p x → transport (λ i → cong (fst (p i)) ∘ l x .fst .fst ≡ l (fst (p i) x) .fst .fst) refl
+
+    fun→ : ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) → ∥ idEquiv X ≡ f ∥
+    fun→ prop =
+      recPropTrunc propTruncIsProp (λ x₀ → recPropTrunc propTruncIsProp (λ p₀ → ∣ lemma x₀ p₀ ∣)
+      (gerbe-conn gerbe x₀ (fst f x₀))) (gerbe-inhabited gerbe)
+      where
+      s : (x y : X) → _
+      s x y = S.s-iso gerbe x y .fst .fst
+      sf : (x : X) → _
+      sf x = S.s-iso gerbe x (fst f x) .fst .fst
+
+      cong-f : (x : X) → (x ≡ x) → ((fst f x) ≡ (fst f x))
+      cong-f x = cong (fst f)
+
+      carac-cong-f : (x : X) → cong-f x ≡ sf x
+      carac-cong-f x = invEquiv (_ , isEquiv→isEmbedding (isEquivPreComp (l x .fst)) (cong-f x) (sf x)) .fst (pre-carac2 x) where
+        pre-carac1 : (x : X) → sf x ∘ (l x .fst .fst) ≡ l (fst f x) .fst .fst
+        pre-carac1 x = cong fst (cong fst (snd link x (fst f x)))
+        pre-carac2 : (x : X) → (cong-f x) ∘ (l x .fst .fst) ≡ sf x ∘ (l x .fst .fst)
+        pre-carac2 x = (prop x) ∙ sym (pre-carac1 x)
+
+      lemma : (x₀ : ⟨ gerbe ⟩) (p₀ : x₀ ≡ fst f x₀) → idEquiv X ≡ f
+      lemma x₀ p₀ = equivEq _ _ (funExt id≡f) where
+        CG : ConcreteGroup _
+        CG = conc-group X (struct-conc-group x₀ (gerbe-conn gerbe x₀) (gerbe-grpd gerbe x₀ x₀))
+        morph-id : GroupHom (abs CG) (abs CG)
+        morph-id = (λ x → x) , λ x y → refl
+
+        f-is-deloop : (x : X) → delooping CG CG morph-id x
+        f-is-deloop x = fst f x , (λ q → p₀ ∙ cong (fst f) q) , λ ω α →
+          p₀ ∙ cong (fst f) (ω ∙ α)
+            ≡⟨ cong (p₀ ∙_) (cong-∙ (fst f) _ _) ⟩
+          p₀ ∙ cong-f x₀ ω ∙ cong (fst f) α
+            ≡⟨ cong (λ r → p₀ ∙ r ∙ cong (fst f) α) (λ i → carac-cong-f x₀ i ω) ⟩
+          p₀ ∙ sf x₀ ω ∙ cong (fst f) α
+            ≡⟨ assoc _ _ _ ⟩
+          (p₀ ∙ sf x₀ ω) ∙ cong (fst f) α
+            ≡⟨ cong (λ r → (p₀ ∙ r) ∙ cong (fst f) α) (S.s gerbe x₀ (fst f x₀) .snd p₀ ω) ⟩
+          (p₀ ∙ sym p₀ ∙ ω ∙ p₀) ∙ cong (fst f) α
+            ≡⟨ cong (_∙ cong (fst f) α) (compPathl-cancel p₀ (ω ∙ p₀)) ⟩
+          (ω ∙ p₀) ∙ cong (fst f) α
+            ≡⟨ sym (assoc _ _ _) ⟩
+          ω ∙ p₀ ∙ cong (fst f) α ∎
+        id-is-deloop : (x : X) → delooping CG CG morph-id x
+        id-is-deloop x = x , (λ p → p) , λ _ _ → refl
+
+        id≡f : (x : X) → x ≡ fst f x
+        id≡f x = cong fst (isContr→isProp (deloopingContr CG CG morph-id x) (id-is-deloop x) (f-is-deloop x))
+
+    sec : section fun→ fun←
+    sec _ = propTruncIsProp _ _
+
+    retr : retract fun→ fun←
+    retr _ = isPropΠ (λ _ → isSetΠ (λ _ → gerbe-grpd gerbe _ _) _ _) _ _
+
+  ZG : Type ℓ'
+  ZG = Σ[ f ∈ X ≃ X ] ∥ idEquiv X ≡ f ∥
+
+  B²Path≃ZG : (G ≡ G) ≃ ZG
+  B²Path≃ZG = compEquiv (invEquiv equiv1) (congΣEquiv equiv2)
+  
+  
 
 -------------------
 {-
