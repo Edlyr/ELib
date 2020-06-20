@@ -104,7 +104,7 @@ lemma𝓩SetFibers {ℓ} G x = recPropTrunc isPropIsSet (λ p → transport (λ 
     (isSetΣ subLemma (λ _ → isProp→isSet (isPropIsEquiv _)))) λ _ → isProp→isSet propTruncIsProp) where
     subLemma : isSet(Σ[ f ∈ (type → type) ] (f pnt ≡ pnt))
     subLemma (ϕ , p) (ψ , q) =
-      isOfHLevelRespectEquiv 1 Σ≃
+      isOfHLevelRespectEquiv 1 ΣPath≃PathΣ
       (transport (cong (λ x → isProp(Σ _ x)) (funExt λ _ → sym (PathP≡compPathL _ _ _)))
       λ π π' → ΣPathP (pathExt _ _ (cong sym (simplR q (snd π) ∙ sym (simplR q (snd π')))) , toPathP (isGrpd _ _ _ _ _ _))) where
         simplR : ∀ {ℓ} {A : Type ℓ} {a b c : A} {p : a ≡ b} {q : b ≡ c} → (s : a ≡ c) → p ∙ q ≡ s → p ≡ s ∙ sym q
@@ -141,17 +141,18 @@ cong𝓩AbstractCenter Ggrp x y =
   lemma2 : (p : ZG.El) (q : G.El) → q ≡ (cong𝓩 Ggrp (sym p)) ∙ q ∙ (cong𝓩 Ggrp p)
   lemma2 p q i = lemma ZG.pnt p i q
 
-cong𝓩inj : ∀ {ℓ} (G : ConcreteGroup ℓ) → isEmbedding(cong𝓩 G)
-cong𝓩inj G' = injEmbedding (ZG.isGrpd _ _) (G.isGrpd _ _) λ {x} {y} p → p∙q⁻¹≡refl→p≡q _ _
-  let path = lemma (x ∙ y ⁻¹) (cong𝓩 G' (x ∙ y ⁻¹) ≡⟨ cong-∙ (fst (𝓩 G')) x (y ⁻¹) ⟩ (cong𝓩 G' x ∙ (cong𝓩 G' (sym y))) ≡⟨ p≡q→p∙q⁻¹≡refl _ _ p ⟩ refl ∎) in
-  let simplification : path ≡ refl
-      simplification = (lemma𝓩SetFibers G' G.pnt _ _ _ _) in
-      fst (pathSigma→sigmaPath _ _ (cong (pathSigma→sigmaPath _ _) simplification)) where
-  module G = ConcreteGroup G'
-  module ZG = ConcreteGroup (Z G')
 
-  lemma : (x : ZG.El) → (cong𝓩 G' x ≡ refl) → (Path (fiber (fst (𝓩 G')) G.pnt) (ZG.pnt , refl) (ZG.pnt , refl))
-  lemma x p = ΣPathP (x , transport (sym (PathP≡compPathL _ _ _)) (sym (rUnit _) ∙ cong sym p))
+cong𝓩inj : ∀ {ℓ} (G : ConcreteGroup ℓ) → isEmbedding(cong𝓩 G)
+cong𝓩inj G = injEmbedding (ZG.isGrpd _ _) (G.isGrpd _ _) λ {x} {y} p → lemma3 x y p where
+  module G = ConcreteGroup G
+  module ZG = ConcreteGroup (Z G)
+
+  lemma : (x : ZG.El) → (cong𝓩 G x ≡ refl) → Path (fiber (fst (𝓩 G)) G.pnt) (ZG.pnt , refl) (ZG.pnt , refl)
+  lemma x p = ΣPathP (x , λ i j → p j i)
+  lemma2 : (x : ZG.El) → (cong𝓩 G x ≡ refl) → x ≡ refl
+  lemma2 x p = cong (cong fst) (lemma𝓩SetFibers G G.pnt _ _ (lemma x p) refl)
+  lemma3 : (x y : ZG.El) → (cong𝓩 G x ≡ cong𝓩 G y) → x ≡ y
+  lemma3 x y p = p∙q⁻¹≡refl→p≡q _ _ (lemma2 _ (cong-∙ (fst (𝓩 G)) x (sym y) ∙ p≡q→p∙q⁻¹≡refl (cong𝓩 G x) (cong𝓩 G y) p))
 
 -- Corollary : Z G is abelian
 isAbelianZ : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian (Z G)
@@ -213,3 +214,4 @@ isAbelian→isAbelian' G ab = isEmbedding×isSurjection→isEquiv
 
 isAbelian≃isAbelian' : ∀ {ℓ} (G : ConcreteGroup ℓ) → isAbelian G ≃ isAbelian' G
 isAbelian≃isAbelian' G = isoToEquiv (iso (isAbelian→isAbelian' G) (isAbelian'→isAbelian G) (λ _ → isPropIsEquiv _ _ _) λ _ → isPropIsAbelian G _ _)
+

@@ -67,52 +67,49 @@ group-ua G H ((f , eq) , morph) = cong (equivFun assocΣ)
 -- Dual group and inversion antimorphism
 
 DualGroup : Group {ℓ} → Group {ℓ}
-DualGroup (X , _⨀_ , (setX , assoc) , id , neutral , inv) =
-  X ,
-  (λ x y → y ⨀ x) ,
-  (setX , λ x y z → sym (assoc z y x)) ,
-  id ,
-  (λ x → sym (G.lUnit x) , sym (G.rUnit x)) ,
-  λ x → G.inv x , G.lCancel x , G.rCancel x
-  where module G = GroupLemmas (X , _⨀_ , (setX , assoc) , id , neutral , inv)
+DualGroup G = makeGroup 0g (λ x y → y + x) -_ is-set (λ x y z → sym (Group.assoc G z y x)) lid rid invl invr where
+  open Group G
   
 DualGroupIso : (G : Group {ℓ}) → GroupIso G (DualGroup G)
-DualGroupIso G = (f , isEquiv-f) , isMorph-f where
-  module Ggrp = GroupLemmas G
-  _⨀_ = Ggrp.op
-  inv = Ggrp.inv
+DualGroupIso G = groupiso (f , isEquiv-f)  isMorph-f where
+  module G = Group G
+  open GroupLemmas G
+  _⨀_ = G._+_
+  inv = G.-_
   
   f : ⟨ G ⟩ → ⟨ G ⟩
   f x = inv x
 
   isEquiv-f : isEquiv f
-  isEquiv-f = snd (isoToEquiv (iso f f Ggrp.invInvo Ggrp.invInvo))
+  isEquiv-f = snd (isoToEquiv (iso f f invInvo invInvo))
 
   isMorph-f : isGroupHom G (DualGroup G) f
   isMorph-f g h =
-    inv (g ⨀ h) ≡⟨ sym (Ggrp.invUniqueL ((
+    inv (g ⨀ h) ≡⟨ sym (invUniqueL ((
       (inv h ⨀ inv g) ⨀ (g ⨀ h)
-        ≡⟨ sym (Ggrp.assoc _ _ _) ∙ cong (inv h ⨀_) (Ggrp.assoc _ _ _ ∙ cong (_⨀ h) (Ggrp.lCancel g) ∙ sym (Ggrp.lUnit h)) ⟩
+        ≡⟨ sym (G.assoc _ _ _) ∙ cong (inv h ⨀_) (G.assoc _ _ _ ∙ cong (_⨀ h) (G.invl g) ∙ G.lid h) ⟩
       inv h ⨀ h
-        ≡⟨ Ggrp.lCancel h ⟩
-      Ggrp.id ∎))
+        ≡⟨ G.invl h ⟩
+      G.0g ∎))
     ) ⟩ (inv h ⨀ inv g) ∎
 
 -- Characterising a group by an isomorphism
 groupStructFromIso : (G : Group {ℓ}) → (H : Σ[ X ∈ Type ℓ' ] (X → X → X)) → (f : ⟨ G ⟩ ≃ fst H) →
-  ((g g' : ⟨ G ⟩) → equivFun f (group-operation G g g') ≡ snd H (equivFun f g) (equivFun f g')) → Group {ℓ'}
+  ((g g' : ⟨ G ⟩) → equivFun f (Group._+_ G g g') ≡ snd H (equivFun f g) (equivFun f g')) → Group {ℓ'}
 groupStructFromIso G (X , _⋆_) (f , eq) morph-f =
-  leftist-group
+  makeGroup-left
+    (f G.0g)
     _⋆_
-    (isOfHLevelRespectEquiv 2 (f , eq) Ggrp.set)
-    (λ x y z → isInj-g _ _ (morph-g _ _ ∙ cong (g x ⨀_) (morph-g _ _) ∙ Ggrp.assoc _ _ _ ∙ sym (morph-g _ _ ∙ cong (_⨀ g z) (morph-g _ _))))
-    (f Ggrp.id)
-    (λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') Ggrp.id) ∙ sym (Ggrp.lUnit (g x))))
-    (λ x → f (Ggrp.inv (g x)))
-    λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') _) ∙ Ggrp.lCancel (g x) ∙ sym (retEq (g , eq') Ggrp.id))
+    (λ x → f (inv (g x)))
+    (isOfHLevelRespectEquiv 2 (f , eq) G.is-set)
+    (λ x y z → isInj-g _ _ (morph-g _ _ ∙ cong (g x ⨀_) (morph-g _ _) ∙ G.assoc _ _ _ ∙ sym (morph-g _ _ ∙ cong (_⨀ g z) (morph-g _ _))))
+    (λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') G.0g) ∙ (G.lid (g x))))
+    λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') _) ∙ G.invl (g x) ∙ sym (retEq (g , eq') G.0g))
   where
-  module Ggrp = GroupLemmas G
-  _⨀_ = Ggrp.op
+  open GroupLemmas G
+  module G = Group G
+  _⨀_ = G._+_
+  inv = G.-_
   
   g = invEq (f , eq)
   eq' : isEquiv g

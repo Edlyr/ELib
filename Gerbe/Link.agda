@@ -6,7 +6,6 @@ open import Cubical.Foundations.Everything
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ; elim to elimPropTrunc)
 open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
-open import ELib.Group.Morphism
 open import Cubical.Data.Sigma
 open import Cubical.Functions.Embedding
 open import Cubical.Functions.Surjection
@@ -21,10 +20,9 @@ private
 GRP = AbGroup→Group
 
 linked-by-ab : (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) → Type (ℓ-max ℓ ℓ')
-linked-by-ab {ℓ} {ℓ'} G Aab = Σ[ e ∈ ((x : ⟨ G ⟩) → GroupIso A (AbGroup→Group (π G x))) ]
-  ((x y : ⟨ G ⟩) → compGroupIso A (H x) (H y) (e x) (s-iso x y) ≡ e y) where
+linked-by-ab G A = Σ[ e ∈ ((x : ⟨ G ⟩) → AbGroupIso A (π G x)) ]
+  ((x y : ⟨ G ⟩) → compGroupIso (e x) (s-iso x y) ≡ e y) where
   open S G
-  A = AbGroup→Group Aab
   H : (x : _) → _
   H x = AbGroup→Group (π G x)
 
@@ -36,7 +34,8 @@ B² {ℓ} A = TypeWithStr ℓ (linkStructure A)
 
 linkHom : ∀ {ℓ ℓ'} → (A : AbGroup {ℓ}) → StrHom {ℓ = ℓ'} (linkStructure A) _
 linkHom A (X₁ , gerbe₁ , l₁ , _) (X₂ , gerbe₂ , l₂ , _) f =
-  (x : X₁) → cong f ∘ (l₁ x .fst .fst) ≡ l₂ (f x) .fst .fst
+  (x : X₁) → cong f ∘ (l₁ x .fun .fst) ≡ l₂ (f x) .fun .fst where
+  open GroupIso
 
 linkIso : ∀ {ℓ ℓ'} → (A : AbGroup {ℓ}) → StrIso {ℓ = ℓ'} (linkStructure A) _
 linkIso A = StrHom→StrIso (linkHom A)
@@ -59,7 +58,7 @@ abstract
       ((linkIso A (X , gerbe₂ , l₁') (X , gerbe₂ , l₂) (idEquiv X)) ≃ (ok gerbe₂ l₁' ≡ ok gerbe₂ l₂)) ≡
       ((linkIso A (X , gerbe₁ , l₁ ) (X , gerbe₂ , l₂) (idEquiv X)) ≃ (ok gerbe₁ l₁ ≡ ok gerbe₂ l₂))
     path i = (linkIso A (X , wesh (~ i)) (X , gerbe₂ , l₂) (idEquiv X)) ≃ (wesh (~ i) ≡ ok gerbe₂ l₂)
-  
+ 
     π₁ : (x : X) → Group
     π₁ x = GRP (π (X , gerbe₁) x)
   
@@ -67,20 +66,17 @@ abstract
       linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X) ≃ (ok gerbe l₁ ≡ ok gerbe l₂)
     test gerbe l₁ l₂ = isoToEquiv (iso Iso→≡ ≡→Iso sec retr) where
       Iso→≡  : linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X) → ok gerbe l₁ ≡ ok gerbe l₂
-      Iso→≡ link-iso = ΣPathP (refl , ΣProp≡
-        (λ _ → isPropΠ2 λ _ y → isSetGroupIso (GRP A) (π₁ y) _ _)
-        (funExt λ x → groupIsoEq (GRP A) (π₁ x) _ _ (equivEq _ _ (link-iso x)))
-       )
+      Iso→≡ link-iso = ΣPathP (refl , Σ≡Prop
+        (λ _ → isPropΠ2 λ _ y → isSetGroupIso _ _ _ _)
+        (funExt λ x → groupIsoEq _ _ _ _ (equivEq _ _ (link-iso x))))
   
       ≡→Iso : ok gerbe l₁ ≡ ok gerbe l₂ → linkIso A (X , gerbe , l₁) (X , gerbe , l₂) (idEquiv X)
-      ≡→Iso p x i = snd (p i) .fst x .fst .fst
+      ≡→Iso p x i = snd (p i) .fst x .fun .fst where open GroupIso
   
       isSetLinkStructure : isSet (linkStructure A X)
-      isSetLinkStructure =
-        isSetΣ (isProp→isSet (isPropIsGerbe X)) λ gerbe →
-        isSetΣ
-          (isSetΠ λ x → isSetGroupIso (GRP A) (π₁ x))
-          λ f → isSetΠ2 λ y z → isProp→isSet (isSetGroupIso (GRP A) (π₁ z) _ _)
+      isSetLinkStructure = isSetΣ (isProp→isSet (isPropIsGerbe X)) λ gerbe → isSetΣ
+          (isSetΠ λ x → isSetGroupIso _ _)
+          λ f → isSetΠ2 λ y z → isProp→isSet (isSetGroupIso _ _ _ _)
   
       sec : section Iso→≡ ≡→Iso
       sec p = isSetLinkStructure _ _ _ _
@@ -113,38 +109,39 @@ open import ELib.ConcreteGroup.Base
 open import ELib.ConcreteGroup.DeloopMorph
 
 module _ (A : AbGroup {ℓ'}) (G : B² {ℓ'} {ℓ} A) where
+  open GroupIso
   X = fst G
   gerbe : Gerbe
   gerbe = (fst G , fst (snd G))
   link = snd (snd G)
   l = fst (link)
-  equiv1 : Σ (fst G ≃ fst G) (λ f → (x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) ≃ (G ≡ G)
+  equiv1 : Σ (fst G ≃ fst G) (λ f → (x : X) → cong (fst f) ∘ l x .fun .fst ≡ l (fst f x) .fun .fst) ≃ (G ≡ G)
   equiv1 = SIP (linkSNS A) G G
 
-  equiv2 : (f : fst G ≃ fst G) → ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) ≃ ∥ idEquiv X ≡ f ∥
+  equiv2 : (f : fst G ≃ fst G) → ((x : X) → cong (fst f) ∘ l x .fun .fst ≡ l (fst f x) .fun .fst) ≃ ∥ idEquiv X ≡ f ∥
   equiv2 f = isoToEquiv (iso fun→ fun← sec retr) where
-    fun← : ∥ idEquiv X ≡ f ∥ → ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst)
+    fun← : ∥ idEquiv X ≡ f ∥ → ((x : X) → cong (fst f) ∘ l x .fun .fst ≡ l (fst f x) .fun .fst)
     fun← = recPropTrunc (isPropΠ λ x → isSetΠ (λ g → gerbe-grpd gerbe _ _) _ _)
-      λ p x → transport (λ i → cong (fst (p i)) ∘ l x .fst .fst ≡ l (fst (p i) x) .fst .fst) refl
+      λ p x → transport (λ i → cong (fst (p i)) ∘ l x .fun .fst ≡ l (fst (p i) x) .fun .fst) refl
 
-    fun→ : ((x : X) → cong (fst f) ∘ l x .fst .fst ≡ l (fst f x) .fst .fst) → ∥ idEquiv X ≡ f ∥
+    fun→ : ((x : X) → cong (fst f) ∘ l x .fun .fst ≡ l (fst f x) .fun .fst) → ∥ idEquiv X ≡ f ∥
     fun→ prop =
       recPropTrunc propTruncIsProp (λ x₀ → recPropTrunc propTruncIsProp (λ p₀ → ∣ lemma x₀ p₀ ∣)
       (gerbe-conn gerbe x₀ (fst f x₀))) (gerbe-inhabited gerbe)
       where
       s : (x y : X) → _
-      s x y = S.s-iso gerbe x y .fst .fst
+      s x y = S.s-iso gerbe x y .fun .fst
       sf : (x : X) → _
-      sf x = S.s-iso gerbe x (fst f x) .fst .fst
+      sf x = S.s-iso gerbe x (fst f x) .fun .fst
 
       cong-f : (x : X) → (x ≡ x) → ((fst f x) ≡ (fst f x))
       cong-f x = cong (fst f)
 
       carac-cong-f : (x : X) → cong-f x ≡ sf x
-      carac-cong-f x = invEquiv (_ , isEquiv→isEmbedding (isEquivPreComp (l x .fst)) (cong-f x) (sf x)) .fst (pre-carac2 x) where
-        pre-carac1 : (x : X) → sf x ∘ (l x .fst .fst) ≡ l (fst f x) .fst .fst
-        pre-carac1 x = cong fst (cong fst (snd link x (fst f x)))
-        pre-carac2 : (x : X) → (cong-f x) ∘ (l x .fst .fst) ≡ sf x ∘ (l x .fst .fst)
+      carac-cong-f x = invEquiv (_ , isEquiv→isEmbedding (isEquivPreComp (l x .fun)) (cong-f x) (sf x)) .fst (pre-carac2 x) where
+        pre-carac1 : (x : X) → sf x ∘ (l x .fun .fst) ≡ l (fst f x) .fun .fst
+        pre-carac1 x = cong fst (cong fun (snd link x (fst f x)))
+        pre-carac2 : (x : X) → (cong-f x) ∘ (l x .fun .fst) ≡ sf x ∘ (l x .fun .fst)
         pre-carac2 x = (prop x) ∙ sym (pre-carac1 x)
 
       lemma : (x₀ : ⟨ gerbe ⟩) (p₀ : x₀ ≡ fst f x₀) → idEquiv X ≡ f
@@ -180,13 +177,13 @@ module _ (A : AbGroup {ℓ'}) (G : B² {ℓ'} {ℓ} A) where
 
     retr : retract fun→ fun←
     retr _ = isPropΠ (λ _ → isSetΠ (λ _ → gerbe-grpd gerbe _ _) _ _) _ _
-
+{-
   ZG : Type ℓ'
   ZG = Σ[ f ∈ X ≃ X ] ∥ idEquiv X ≡ f ∥
 
   B²Path≃ZG : (G ≡ G) ≃ ZG
-  B²Path≃ZG = compEquiv (invEquiv equiv1) (congΣEquiv equiv2)
-  
+  B²Path≃ZG = compEquiv (invEquiv equiv1) (Σ-cong-equiv-snd equiv2)
+-}
   
 
 -------------------

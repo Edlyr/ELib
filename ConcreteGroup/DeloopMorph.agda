@@ -23,7 +23,7 @@ private
     ℓ ℓ' : Level
 
 abs : ∀ {ℓ} → ConcreteGroup ℓ → Group {ℓ}
-abs G = El , _∙_ , (grpd , assoc) , refl , (λ x → sym (rUnit x) , sym (lUnit x)) , λ x → sym x , rCancel x , lCancel x where
+abs G = makeGroup (refl {x = pnt}) _∙_ sym grpd assoc (sym ∘ rUnit) (sym ∘ lUnit) rCancel lCancel where
   open CG G
 
 absHom : ∀ {ℓ} (G H : ConcreteGroup ℓ) (f : CG.Ptd G →∙ CG.Ptd H) → (GroupHom (abs G) (abs H))
@@ -43,10 +43,11 @@ absHom G H (f , p) =
     ≡⟨ assoc _ _ _ ∙ assoc _ _ _ ∙ cong (λ r → r ∙ p ⁻¹ ∙ cong f y ∙ p) (sym (assoc _ _ _)) ⟩
   (p ⁻¹ ∙ cong f x ∙ p) ∙ (p ⁻¹ ∙ cong f y ∙ p) ∎
 
-homId : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupHom G H) → fst f (group-id G) ≡ group-id H
-homId G H (f , morph) = H.idUniqueL (f G.id) (sym (cong f (G.lUnit G.id) ∙ morph _ _)) where
+homId : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupHom G H) → fst f (Group.0g G) ≡ Group.0g H
+homId G H (f , morph) = H.idUniqueL (f Ggrp.0g) (sym (cong f (sym (Ggrp.lid Ggrp.0g)) ∙ morph _ _)) where
   module H = GroupLemmas H
   module G = GroupLemmas G
+  module Ggrp = Group G
 
 delooping : (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : GroupHom (abs G) (abs H)) (x : CG.type G) → Type (ℓ-max ℓ ℓ')
 delooping G H f x =
@@ -84,14 +85,14 @@ deloopingContr G H ϕ x =
       f ω ∙ f α ∙ p refl
         ≡⟨ cong (λ r → f ω ∙ r) (sym (h α)) ⟩
       f ω ∙ p α ∎)
-    (λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → H.isGrpd _ _ _ _) refl))
-    (λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ2 λ _ _ → H.isGrpd _ _ _ _) refl)))
+    (λ (y , p , h) → ΣPathP (refl , Σ≡Prop (λ _ → isPropΠ λ _ → H.isGrpd _ _ _ _) refl))
+    (λ (y , p , h) → ΣPathP (refl , Σ≡Prop (λ _ → isPropΠ2 λ _ _ → H.isGrpd _ _ _ _) refl)))
   equiv2 : (Σ[ y ∈ H.type ] Σ[ p ∈ (G.El → H.pnt ≡ y) ] ((ω : G.El) → p ω ≡ f ω ∙ p refl)) ≃ (Σ[ y ∈ H.type ] (b ≡ y))
   equiv2 = isoToEquiv (iso
     (λ (y , p , h) → y , p refl)
     (λ (y , pRefl) → y , (λ ω → f ω ∙ pRefl) , λ ω → cong (λ r → f ω ∙ r) (lUnit pRefl ∙ cong (λ r → r ∙ pRefl) (sym (homId (abs G) (abs H) ϕ))))
     (λ (y , pRefl) → ΣPathP (refl , sym (lUnit _ ∙ cong (λ r → r ∙ pRefl) (sym (homId (abs G) (abs H) ϕ)))))
-    λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → H.isGrpd _ _ _ _) (funExt λ ω → sym (h ω))))
+    λ (y , p , h) → ΣPathP (refl , Σ≡Prop (λ _ → isPropΠ λ _ → H.isGrpd _ _ _ _) (funExt λ ω → sym (h ω))))
 
   contr-a : isContr (Σ[ y ∈ H.type ] (b ≡ y))
   contr-a = (b , refl) , λ (b' , p) → ΣPathP (p , λ i j → p (i ∧ j))
@@ -141,4 +142,3 @@ deloop {ℓ} {ℓ'} Ggrp Hgrp f morph = {!!} where
         Σ[ p ∈ ((G.pnt ≡ x) → (H.pnt ≡ y)) ]
         ((ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ (f ω) ∙ p α)
 -}
-

@@ -14,8 +14,8 @@ RActionAxioms : {ℓ ℓ' : Level} → (G : Group {ℓ}) → (X : Type ℓ') →
 RActionAxioms G X _⋆_ =
   ((x : X) (g g' : ⟨ G ⟩) → (x ⋆ g) ⋆ g' ≡ x ⋆ (g ⨀ g')) ×
   ((x : X) → x ⋆ id ≡ x) where
-  _⨀_ = GroupLemmas.op G
-  id = GroupLemmas.id G
+  _⨀_ = Group._+_ G
+  id = Group.0g G
 
 isPropRActionAxioms : {ℓ ℓ' : Level} → (G : Group {ℓ}) → (X : Type ℓ') → isSet X → (r : X → ⟨ G ⟩ → X) → isProp(RActionAxioms G X r)
 isPropRActionAxioms G X isSetX _⋆_ = isProp× (isPropΠ λ _ → isPropΠ2 λ _ _ → isSetX _ _) (isPropΠ λ _ → isSetX _ _)
@@ -33,21 +33,22 @@ isPropIsTorsor : ∀ {ℓ ℓ' : Level} (G : Group {ℓ}) (r : RAction {ℓ' = �
 isPropIsTorsor G r = isProp× propTruncIsProp (isProp× isPropIsSet (isPropΠ2 (λ _ _ → isPropIsContr)))
 
 principalTorsor : ∀ {ℓ} (G : Group {ℓ}) → RAction G
-principalTorsor G = ⟨ G ⟩ , _⨀_ , (λ _ _ _ → sym (assocG _ _ _)) , λ x → sym (rUnitG x) where
-  _⨀_ = GroupLemmas.op G
-  assocG = GroupLemmas.assoc G
-  rUnitG = GroupLemmas.rUnit G
+principalTorsor G = ⟨ G ⟩ , _⨀_ , (λ _ _ _ → sym (assocG _ _ _)) , rUnitG where
+  _⨀_ = Group._+_ G
+  assocG = Group.assoc G
+  rUnitG = Group.rid G
 
 isTorsorPrincipalTorsor : ∀ {ℓ} (G : Group {ℓ}) → isTorsor G (principalTorsor G)
 isTorsorPrincipalTorsor G =
-  ∣ id ∣ , isSetG ,
+  ∣ G.0g ∣ , G.is-set ,
   λ x y → (trans x y , transProof x y) ,
-  λ (g , p) → ΣProp≡ (λ _ → isSetG _ _) (simplL x (transProof x y ∙ sym p)) where
-    open GroupLemmas G renaming (set to isSetG ; assoc to assocG ; lUnit to lUnitG ; rCancel to rCancelG)
+  λ (g , p) → Σ≡Prop (λ _ → G.is-set _ _) (simplL x (transProof x y ∙ sym p)) where
+    module G = Group G
+    open GroupLemmas G
     trans : (x y : ⟨ G ⟩) → ⟨ G ⟩
-    trans x y = inv x ⨀ y
-    transProof : (x y : ⟨ G ⟩) → x ⨀ trans x y ≡ y
-    transProof x y = assocG _ _ _ ∙ cong (λ r → r ⨀ y) (rCancelG x) ∙ sym (lUnitG y)
+    trans x y = G.- x G.+ y
+    transProof : (x y : ⟨ G ⟩) → x G.+ trans x y ≡ y
+    transProof x y = G.assoc _ _ _ ∙ cong (λ r → r G.+ y) (G.invr x) ∙ (G.lid y)
 
 module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction {ℓ' = ℓ'} Ggrp) (tors¹ : isTorsor Ggrp T¹) (tors² : isTorsor Ggrp T²) where
   module G = GroupLemmas Ggrp
@@ -69,12 +70,12 @@ module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction
 
   equiv1 : (Σ[ p ∈ X¹ ≡ X² ] PathP (λ i → RActionOn Ggrp (p i)) (snd T¹) (snd T²)) ≃ (Σ[ p ∈ X¹ ≡ X² ] PathP ((λ i → p i → ⟨ Ggrp ⟩ → p i)) _⋆¹_ _⋆²_)
   equiv1 =
-    (congΣEquiv λ p → compEquiv (PathP≃Path _ _ _) (compEquiv
+    (Σ-cong-equiv-snd λ p → compEquiv (PathP≃Path _ _ _) (compEquiv
       (isoToEquiv (iso
         (cong fst)
-        (λ p → ΣProp≡ (isPropRActionAxioms Ggrp X² isSetX²) p)
+        (λ p → Σ≡Prop (isPropRActionAxioms Ggrp X² isSetX²) p)
         (λ p → refl)
-        λ p → cong ΣPathP (ΣProp≡ (λ r → transport (cong isProp (sym (PathP≡Path _ _ _))) (isProp→isSet (isPropRActionAxioms Ggrp X² isSetX² (r i1)) _ _)) refl)
+        λ p → cong ΣPathP (Σ≡Prop (λ r → transport (cong isProp (sym (PathP≡Path _ _ _))) (isProp→isSet (isPropRActionAxioms Ggrp X² isSetX² (r i1)) _ _)) refl)
       ))
     (invEquiv (PathP≃Path _ _ _))))
 
@@ -93,14 +94,14 @@ module TorsorEquality {ℓ ℓ' : Level} (Ggrp : Group {ℓ}) (T¹ T² : RAction
 
   equiv2 : (Σ[ p ∈ X¹ ≡ X² ] PathP ((λ i → p i → ⟨ Ggrp ⟩ → p i)) _⋆¹_ _⋆²_) ≃
     (Σ[ p ∈ X¹ ≡ X² ] ((x : X¹) (g : ⟨ Ggrp ⟩) → transport p (x ⋆¹ g) ≡ (transport p x) ⋆² g))
-  equiv2 = congΣEquiv λ p → pathToEquiv (preEquiv2 p)
+  equiv2 = Σ-cong-equiv-snd λ p → pathToEquiv (preEquiv2 p)
 
   equiv3 : (Σ[ p ∈ X¹ ≡ X² ] ((x : X¹) (g : ⟨ Ggrp ⟩) → transport p (x ⋆¹ g) ≡ (transport p x) ⋆² g)) ≃ T¹≃T²
   equiv3 = isoToEquiv (iso
     (λ P → pathToEquiv (fst P) , λ x g → sym (transport≡pathToEquiv (fst P) _) ∙ snd P x g ∙ cong (λ y → y ⋆² g) (transport≡pathToEquiv (fst P) _))
     (λ Q → ua (fst Q) , λ x g → uaβ (fst Q) _ ∙ snd Q x g ∙ cong (λ y → y ⋆² g) (sym (uaβ (fst Q) _)))
-    (λ Q → ΣProp≡ (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetX² _ _) (pathToEquiv-ua _))
-    (λ P → ΣProp≡ (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetX² _ _) (ua-pathToEquiv _))
+    (λ Q → Σ≡Prop (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetX² _ _) (pathToEquiv-ua _))
+    (λ P → Σ≡Prop (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetX² _ _) (ua-pathToEquiv _))
    )
 
   abstract
@@ -125,7 +126,7 @@ module TorsorLoopspace  {ℓ : Level} (Ggrp : Group {ℓ}) where
 
   torsorEqCaracMorph : ∀ {ℓ'} (T¹ T² T³ : Torsor {ℓ' = ℓ'}) (p : fst T¹ ≡ fst T²) (q : fst T² ≡ fst T³) →
     equivFun (torsorEqCarac T¹ T³) (p ∙ q) ≡ comp≃T {T¹ = T¹} {T² = T²} {T³ = T³} (equivFun (torsorEqCarac T¹ T²) p) (equivFun (torsorEqCarac T² T³) q)
-  torsorEqCaracMorph {ℓ'} T¹ T² T³ p q = ΣProp≡ (λ x → isPropΠ λ _ → isPropΠ λ _ → fst (snd (snd T³)) _ _)
+  torsorEqCaracMorph {ℓ'} T¹ T² T³ p q = Σ≡Prop (λ x → isPropΠ λ _ → isPropΠ λ _ → fst (snd (snd T³)) _ _)
     (lemma-p∙q ∙ cong pathToEquiv (cong-∙ _ p q) ∙
     pathToEquiv∙ (cong fst p) (cong fst q) ∙ λ i → compEquiv (lemma-p (~ i)) (lemma-q (~ i))) where
       lemma-p = TorsorEquality.torsorEqualityEquivFst Ggrp (fst T¹) (fst T²) (snd T¹) (snd T²) p

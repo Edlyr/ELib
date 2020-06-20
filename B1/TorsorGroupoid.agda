@@ -13,9 +13,10 @@ open import ELib.Group.Morphism
 open import ELib.UsefulLemmas
 
 module BTorsor {ℓ : Level} {G : Group {ℓ}} where
-  module Ggrp = GroupLemmas G
-  _⨀_ = Ggrp.op
-  inv = Ggrp.inv
+  module G = Group G
+  open GroupLemmas G
+  _⨀_ = G._+_
+  inv = G.-_
   B : Type (ℓ-suc ℓ)
   B = Σ[ r ∈ (RAction G) ] ∥ principalTorsor G ≡ r ∥
 
@@ -37,8 +38,8 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
   caracB≡ : (X Y : B) → (X ≡ Y) ≃ ((fst X , isTorsorBElement X) T≃T ((fst Y , isTorsorBElement Y)))
   caracB≡ X Y =
     X ≡ Y
-      ≃⟨ isoToEquiv (iso (cong fst) (ΣProp≡ λ _ → propTruncIsProp) (λ _ → refl)
-         (λ p → cong ΣPathP (ΣProp≡ (λ _ → isOfHLevelPathP 1 (λ i → propTruncIsProp) _ _) refl))) ⟩
+      ≃⟨ isoToEquiv (iso (cong fst) (Σ≡Prop λ _ → propTruncIsProp) (λ _ → refl)
+         (λ p → cong ΣPathP (Σ≡Prop (λ _ → isOfHLevelPathP 1 (λ i → propTruncIsProp) _ _) refl))) ⟩
     fst X ≡ fst Y
       ≃⟨ TorsorEquality.torsorEqualityEquiv G (fst X) (fst Y) (isTorsorBElement X) (isTorsorBElement Y) ⟩
     _ ■
@@ -63,7 +64,7 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
 
   -- Intermediate groups that will be used in the characterisation of ΩB
   ΩB : Group {ℓ-suc ℓ}
-  ΩB = Path B PT PT , _∙_ , (isGroupoidB PT PT , assoc) , refl , (λ p → sym (rUnit p) , sym (lUnit p)) , λ p → sym p , rCancel p , lCancel p
+  ΩB = makeGroup (refl {x = PT}) _∙_ sym (isGroupoidB PT PT) assoc (λ x → sym (rUnit x)) (λ x → sym (lUnit x)) rCancel lCancel
 
   G' : Group {ℓ}
   G' = DualGroup G
@@ -73,7 +74,7 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
 
   m = equivFun (caracB≡ PT PT)
   caracB≡morphism : (p q : ⟨ ΩB ⟩) → m (p ∙ q) ≡ snd intermediateMagma (m p) (m q)
-  caracB≡morphism p q = ΣProp≡ (λ f → lemmaProp {PT} {PT} f) (
+  caracB≡morphism p q = Σ≡Prop (λ f → lemmaProp {PT} {PT} f) (
     fst (m (p ∙ q))
       ≡⟨ torsorEqualityEquivFst (cong fst (p ∙ q)) ⟩ -- This line is technically "refl" but it has been abstracted out
     pathToEquiv (cong fst (cong fst (p ∙ q)))
@@ -88,37 +89,38 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
   preΩB = groupStructFromIso ΩB intermediateMagma (m , snd (caracB≡ PT PT)) caracB≡morphism
 
   preΩB→G' : ⟨ preΩB ⟩ → ⟨ G' ⟩
-  preΩB→G' ((f , equiv) , β) = f Ggrp.id
+  preΩB→G' ((f , equiv) , β) = f G.0g
 
   G'→preΩB : ⟨ G' ⟩ → ⟨ preΩB ⟩
   G'→preΩB g = isoToEquiv (iso (λ x → g ⨀ x) (λ x → inv g ⨀ x)
-    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.rCancel g)) ∙ sym (Ggrp.assoc _ _ _)))
-    (λ x → sym (Ggrp.lUnit x ∙ cong (λ y → y ⨀ x) (sym (Ggrp.lCancel g)) ∙ sym (Ggrp.assoc _ _ _)))) ,
-    λ x h → (g ⨀ (x ⨀ h)) ≡⟨ Ggrp.assoc _ _ _ ⟩ ((g ⨀ x) ⨀ h) ∎
+    (λ x → sym (sym (G.lid x) ∙ cong (λ y → y ⨀ x) (sym (G.invr g)) ∙ sym (G.assoc _ _ _)))
+    (λ x → sym (sym (G.lid x) ∙ cong (λ y → y ⨀ x) (sym (G.invl g)) ∙ sym (G.assoc _ _ _)))) ,
+    λ x h → (g ⨀ (x ⨀ h)) ≡⟨ G.assoc _ _ _ ⟩ ((g ⨀ x) ⨀ h) ∎
 
   isMorphism-G'→preΩB : isGroupHom G' preΩB G'→preΩB
-  isMorphism-G'→preΩB g g' = ΣProp≡ (λ f → lemmaProp {PT} {PT} f) (equivEq _ _ (funExt λ x →
-    ((g' ⨀ g) ⨀ x) ≡⟨ sym (Ggrp.assoc g' g x) ⟩ (g' ⨀ (g ⨀ x)) ∎))
+  isMorphism-G'→preΩB g g' = Σ≡Prop (λ f → lemmaProp {PT} {PT} f) (equivEq _ _ (funExt λ x →
+    ((g' ⨀ g) ⨀ x) ≡⟨ sym (G.assoc g' g x) ⟩ (g' ⨀ (g ⨀ x)) ∎))
 
   private
     retr : retract G'→preΩB preΩB→G'
-    retr g = sym (Ggrp.rUnit g)
+    retr = G.rid
 
     sec : section G'→preΩB preΩB→G'
     sec ((f , equiv) , β) =
-      ΣProp≡ (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetBElement PT _ _)
+      Σ≡Prop (λ _ → isPropΠ λ _ → isPropΠ λ _ → isSetBElement PT _ _)
       (equivEq _ _ (funExt λ x →
-        (f Ggrp.id ⨀ x)
-          ≡⟨ sym (β Ggrp.id x) ⟩
-        f (Ggrp.id ⨀ x)
-          ≡⟨ cong f (sym (Ggrp.lUnit x)) ⟩
+        (f G.0g ⨀ x)
+          ≡⟨ sym (β G.0g x) ⟩
+        f (G.0g ⨀ x)
+          ≡⟨ cong f (G.lid x) ⟩
         f x ∎))
 
   G'≃preΩB : GroupIso G' preΩB
-  G'≃preΩB = (isoToEquiv (iso G'→preΩB preΩB→G' sec retr) , isMorphism-G'→preΩB)
+  G'≃preΩB = groupiso (isoToEquiv (iso G'→preΩB preΩB→G' sec retr)) isMorphism-G'→preΩB
 
   ΩB≃preΩB : GroupIso ΩB preΩB
-  ΩB≃preΩB = caracB≡ PT PT , caracB≡morphism
+  ΩB≃preΩB = groupiso (caracB≡ PT PT) caracB≡morphism
 
   ΩB≃G : GroupIso ΩB G
-  ΩB≃G = compGroupIso ΩB preΩB G ΩB≃preΩB (compGroupIso preΩB G' G (invGroupIso G' preΩB G'≃preΩB) (invGroupIso G G' (DualGroupIso G)))
+  ΩB≃G = compGroupIso ΩB≃preΩB (compGroupIso (invGroupIso G' preΩB G'≃preΩB) (invGroupIso G G' (DualGroupIso G)))
+

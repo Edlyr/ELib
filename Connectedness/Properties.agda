@@ -43,17 +43,11 @@ pointConnected≃pointed×connected = isoToEquiv (iso pointConnected→pointed×
 -------------------------
 
 connectedComponentPath : ∀ {ℓ : Level} (A : Pointed ℓ) (x y : fst (connectedComponent A)) → (fst x ≡ fst y) ≡ (x ≡ y)
-connectedComponentPath (A , a) x y = lemma ∙ sym (pathSigma≡sigmaPath _ _) where
-  lemma : (fst x ≡ fst y) ≡ (x Σ≡T y)
-  lemma = isoToPath (iso f g sec retr) where
-    f : _
-    f p = p , propTruncIsProp _ _
-    g : _
-    g (p , q) = p
-    sec : _
-    sec (p , q) = ΣPathP (refl , toPathP ((isOfHLevelSuc 1 propTruncIsProp _ _ _ _)))
-    retr : _
-    retr p = refl
+connectedComponentPath (A , a) x y = isoToPath (iso
+  (λ p → Σ≡Prop (λ _ → propTruncIsProp) p)
+  (λ p → cong fst p)
+  (λ p → cong ΣPathP (Σ≡Prop (λ q → isOfHLevelPathP 1 (λ i → propTruncIsProp) _ _) refl))
+  (λ p → refl))
 
 isConnectedConnectedComponent : (A : Pointed ℓ) → isPointConnected (fst (connectedComponent A))
 isConnectedConnectedComponent (A , a) = (a , ∣ refl ∣) ,

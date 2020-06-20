@@ -32,8 +32,8 @@ abstract
               (λ (y , p , !) → y , p , λ ω → cong p (rUnit ω) ∙ ! ω refl)
               (λ (y , p!) → y , fst p! , λ ω α → snd p! (ω ∙ α) ∙ cong (λ y → y ∙ (fst p! refl)) (morph ω α) ∙ sym (assoc _ _ _) ∙
                 cong (λ y → f ω ∙ y) (sym (snd p! α)))
-              (λ (y , p!) → ΣPathP (refl , ΣProp≡ (λ p → isPropΠ λ ω → Bgrpd _ _ _ _) refl))
-              λ (y , p , !) → ΣPathP (refl , ΣProp≡ (λ p → isPropΠ2 λ _ _ → Bgrpd _ _ _ _) refl)
+              (λ (y , p!) → ΣPathP (refl , Σ≡Prop (λ p → isPropΠ λ ω → Bgrpd _ _ _ _) refl))
+              λ (y , p , !) → ΣPathP (refl , Σ≡Prop (λ p → isPropΠ2 λ _ _ → Bgrpd _ _ _ _) refl)
             ) ⟩
         (Σ[ y ∈ B ] Σ[ p ∈ ((a ≡ a) → (b ≡ y)) ] ((ω : a ≡ a) → p ω ≡ f ω ∙ p refl))
           ≃⟨ isoToEquiv
@@ -41,7 +41,7 @@ abstract
               (λ (y , p , !) → y , p refl)
               (λ (y , prefl) → y , (λ ω → f ω ∙ prefl) , λ ω → cong (λ x → f ω ∙ x) (lUnit prefl) ∙ cong (λ x → f ω ∙ x ∙ prefl) (sym fRefl))
               (λ (y , prefl) → ΣPathP (refl , cong (λ x → x ∙ prefl) fRefl ∙ sym (lUnit prefl)))
-              λ (y , p , !) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → Bgrpd _ _ _ _) (funExt λ ω → sym (! ω)))
+              λ (y , p , !) → ΣPathP (refl , Σ≡Prop (λ _ → isPropΠ λ _ → Bgrpd _ _ _ _) (funExt λ ω → sym (! ω)))
             ) ⟩
         (Σ[ y ∈ B ] b ≡ y)
           ≃⟨ isoToEquiv (iso (λ _ → tt) (λ _ → b , refl) (λ { tt → refl }) λ (y , p) → ΣPathP (p , transport (sym (PathP≡compPathR _ _ _)) (sym (lUnit p)))) ⟩

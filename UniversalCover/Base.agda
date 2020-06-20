@@ -12,49 +12,50 @@ open import ELib.Connectedness.Base
 open import ELib.Connectedness.Properties
 --open import Cubical.Homotopy.Loopspace
 open import Cubical.HITs.Nullification as Null hiding (rec; elim)
-open import Cubical.Data.NatMinusTwo
+--open import Cubical.Data.NatMinusTwo
 open import Cubical.Data.Nat
+open import Cubical.Foundations.Equiv.HalfAdjoint
 
 UniversalCover : ∀ {ℓ} → Pointed ℓ → Pointed ℓ
-UniversalCover (A , a) = (Σ[ x ∈ A ] ∥ a ≡ x ∥₀) , (a , ∣ refl ∣₀)
+UniversalCover (A , a) = (Σ[ x ∈ A ] ∥ a ≡ x ∥₂) , (a , ∣ refl ∣₂)
 
 UC = UniversalCover
 
-_∙₀_ : ∀ {ℓ} {A : Type ℓ} {x y z : A} → ∥ x ≡ y ∥₀ → ∥ y ≡ z ∥₀ → ∥ x ≡ z ∥₀
-p ∙₀ q = recSetTrunc setTruncIsSet (λ p → recSetTrunc setTruncIsSet (λ q → ∣ p ∙ q ∣₀) q) p
+_∙₂_ : ∀ {ℓ} {A : Type ℓ} {x y z : A} → ∥ x ≡ y ∥₂ → ∥ y ≡ z ∥₂ → ∥ x ≡ z ∥₂
+p ∙₂ q = recSetTrunc setTruncIsSet (λ p → recSetTrunc setTruncIsSet (λ q → ∣ p ∙ q ∣₂) q) p
 
-sym₀ : ∀ {ℓ} {A : Type ℓ} {x y : A} → ∥ x ≡ y ∥₀ → ∥ y ≡ x ∥₀
-sym₀ p = recSetTrunc setTruncIsSet (λ q → ∣ sym q ∣₀) p
+sym₂ : ∀ {ℓ} {A : Type ℓ} {x y : A} → ∥ x ≡ y ∥₂ → ∥ y ≡ x ∥₂
+sym₂ p = recSetTrunc setTruncIsSet (λ q → ∣ sym q ∣₂) p
 
-rUnit₀ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : ∥ x ≡ y ∥₀) → p ≡ p ∙₀ ∣ refl ∣₀
-rUnit₀ = elimSetTrunc {B = λ p → p ≡ p ∙₀ ∣ refl ∣₀}
-  (λ _ → isProp→isSet (setTruncIsSet _ _)) (λ q → cong (∣_∣₀) (rUnit q))
-lUnit₀ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : ∥ x ≡ y ∥₀) → p ≡ ∣ refl ∣₀ ∙₀ p
-lUnit₀ = elimSetTrunc {B = λ p → p ≡ (∣ refl ∣₀ ∙₀ p)}
-  (λ _ → isProp→isSet (setTruncIsSet _ _)) (λ q → cong (∣_∣₀) (lUnit q))
+rUnit₂ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : ∥ x ≡ y ∥₂) → p ≡ p ∙₂ ∣ refl ∣₂
+rUnit₂ = elimSetTrunc {B = λ p → p ≡ p ∙₂ ∣ refl ∣₂}
+  (λ _ → isProp→isSet (setTruncIsSet _ _)) (λ q → cong (∣_∣₂) (rUnit q))
+lUnit₂ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : ∥ x ≡ y ∥₂) → p ≡ ∣ refl ∣₂ ∙₂ p
+lUnit₂ = elimSetTrunc {B = λ p → p ≡ (∣ refl ∣₂ ∙₂ p)}
+  (λ _ → isProp→isSet (setTruncIsSet _ _)) (λ q → cong (∣_∣₂) (lUnit q))
 
-pathEqualityInTrunc0 : ∀ {ℓ} {A : Type ℓ} (p q : A) → (∣ p ∣₀ ≡ ∣ q ∣₀) ≡ ∥ p ≡ q ∥
+pathEqualityInTrunc0 : ∀ {ℓ} {A : Type ℓ} (p q : A) → (∣ p ∣₂ ≡ ∣ q ∣₂) ≡ ∥ p ≡ q ∥
 pathEqualityInTrunc0 {A = A} p q =
-  (∣ p ∣₀ ≡ ∣ q ∣₀)
-    ≡⟨ ua (congEquiv setTrunc≃Trunc0) ⟩
-  Path (∥_∥_ A (-2+ 2)) ∣ p ∣ ∣ q ∣
+  (∣ p ∣₂ ≡ ∣ q ∣₂)
+    ≡⟨ ua (congEquiv setTrunc≃Trunc2) ⟩
+  Path (∥_∥_ A (2)) ∣ p ∣ ∣ q ∣
     ≡⟨ PathIdTrunc _ ⟩
-  ∥_∥_ (p ≡ q) (-2+ 1)
-    ≡⟨ sym (propTrunc≡Trunc-1) ⟩
+  ∥_∥_ (p ≡ q) (1)
+    ≡⟨ sym (propTrunc≡Trunc1) ⟩
   ∥ p ≡ q ∥ ∎
 
 UCPath≃ : ∀ {ℓ} {A : Pointed ℓ} → (x y : fst (UniversalCover A)) →
-  (x ≡ y) ≃ (Σ[ p ∈ (fst x ≡ fst y) ] snd x ∙₀ ∣ p ∣₀ ≡ snd y)
-UCPath≃ {A = A} x y = compEquiv (invEquiv Σ≃) (pathToEquiv (cong (λ r → Σ (fst x ≡ fst y) r) (funExt λ p → PathP≡Path _ _ _ ∙ cong (λ r → r ≡ snd y) λ i → (lemma p) i (snd x)))) where
+  (x ≡ y) ≃ (Σ[ p ∈ (fst x ≡ fst y) ] snd x ∙₂ ∣ p ∣₂ ≡ snd y)
+UCPath≃ {A = A} x y = compEquiv (invEquiv ΣPath≃PathΣ) (pathToEquiv (cong (λ r → Σ (fst x ≡ fst y) r) (funExt λ p → PathP≡Path _ _ _ ∙ cong (λ r → r ≡ snd y) λ i → (lemma p) i (snd x)))) where
   a = snd A
-  lemma : (p : fst x ≡ fst y) → transport (λ i → ∥ a ≡ (p i) ∥₀) ≡ (λ α → α ∙₀ ∣ p ∣₀)
-  lemma p = J (λ y p → transport (λ i → ∥ a ≡ (p i) ∥₀) ≡ (λ α → α ∙₀ ∣ p ∣₀))
-    (funExt λ α → transportRefl α ∙ rUnit₀ _) p
+  lemma : (p : fst x ≡ fst y) → transport (λ i → ∥ a ≡ (p i) ∥₂) ≡ (λ α → α ∙₂ ∣ p ∣₂)
+  lemma p = J (λ y p → transport (λ i → ∥ a ≡ (p i) ∥₂) ≡ (λ α → α ∙₂ ∣ p ∣₂))
+    (funExt λ α → transportRefl α ∙ rUnit₂ _) p
 
 isConnectedUniversalCover : ∀ {ℓ} → (A : Pointed ℓ) → isConnected (fst (UniversalCover A))
 isConnectedUniversalCover A = snd (pointConnected→pointed×connected (snd (UniversalCover A) ,
   λ x → elimSetTrunc {B = λ p → ∥ snd (UniversalCover A) ≡ (fst x , p) ∥} (λ _ → isProp→isSet propTruncIsProp)
-    (λ p → ∣ fst (invEquiv (UCPath≃ _ _)) (p , sym (lUnit₀ _)) ∣₋₁) (snd x)))
+    (λ p → ∣ fst (invEquiv (UCPath≃ _ _)) (p , sym (lUnit₂ _)) ∣₋₁) (snd x)))
 
 isSimplyConnectedUniversalCover : ∀ {ℓ} (A : Pointed ℓ) → isConnected(snd (UC A) ≡ snd (UC A))
 isSimplyConnectedUniversalCover (A , a) = transport (cong isConnected (sym lemma))
@@ -62,11 +63,11 @@ isSimplyConnectedUniversalCover (A , a) = transport (cong isConnected (sym lemma
   where
   lemma : (snd (UC (A , a)) ≡ snd (UC (A , a))) ≡ fst (connectedComponent ((a ≡ a) , refl))
   lemma = 
-    ((a , ∣ refl ∣₀) ≡ (a , ∣ refl ∣₀))
-      ≡⟨ ua (UCPath≃ (a , ∣ refl ∣₀) (a , ∣ refl ∣₀) ) ⟩
-    (Σ[ p ∈ (a ≡ a) ] ∣ refl ∣₀ ∙₀ ∣ p ∣₀ ≡ ∣ refl ∣₀)
-      ≡⟨ cong (λ x → Σ-syntax (a ≡ a) x) (funExt λ p → cong (λ y → y ≡ ∣ refl ∣₀) (sym (lUnit₀ ∣ p ∣₀))) ⟩
-    (Σ[ p ∈ (a ≡ a) ] ∣ p ∣₀ ≡ ∣ refl ∣₀)
+    ((a , ∣ refl ∣₂) ≡ (a , ∣ refl ∣₂))
+      ≡⟨ ua (UCPath≃ (a , ∣ refl ∣₂) (a , ∣ refl ∣₂) ) ⟩
+    (Σ[ p ∈ (a ≡ a) ] ∣ refl ∣₂ ∙₂ ∣ p ∣₂ ≡ ∣ refl ∣₂)
+      ≡⟨ cong (λ x → Σ-syntax (a ≡ a) x) (funExt λ p → cong (λ y → y ≡ ∣ refl ∣₂) (sym (lUnit₂ ∣ p ∣₂))) ⟩
+    (Σ[ p ∈ (a ≡ a) ] ∣ p ∣₂ ≡ ∣ refl ∣₂)
       ≡⟨ cong (λ x → Σ (a ≡ a) x ) (funExt λ p → pathEqualityInTrunc0 p refl) ⟩
     (Σ[ p ∈ (a ≡ a) ] ∥ p ≡ refl ∥) ∎
 
@@ -86,7 +87,7 @@ isGrpd→is2typeUniversalCover (A , a) grpd x y =
      (transport (cong isGroupoid (ua Σ≡))
      (isGroupoidΣ {!!} {!!})
     )
-  ) (conn (a , ∣ refl ∣₀) y))
-  (conn (a , ∣ refl ∣₀) x) where
+  ) (conn (a , ∣ refl ∣₂) y))
+  (conn (a , ∣ refl ∣₂) x) where
   conn = isConnectedUniversalCover (A , a)
 -}
