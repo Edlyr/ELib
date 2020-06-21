@@ -4,14 +4,9 @@ module ELib.Gerbe.Base where
 
 open import Cubical.Foundations.Everything
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ; elim to elimPropTrunc)
---open import Cubical.Homotopy.Loopspace
---open import Cubical.Structures.Group
 open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
---open import ELib.Group.Morphism
 open import Cubical.Data.Sigma
---open import ELib.B1.MorphismDelooping
---open import ELib.UsefulLemmas
 open import Cubical.Functions.Embedding
 open import ELib.UsefulLemmas
 

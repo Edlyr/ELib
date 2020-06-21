@@ -24,7 +24,6 @@ transport≡p {ℓ} {A} {x} p q = J (λ C p → transport (λ i → x ≡ (p i))
 
 module B {ℓ : Level} (G : Group {ℓ}) where
   module G = Group G
-  open GroupLemmas G
   _⨀_ = G._+_
   inv = G.-_
   data B : Type ℓ where
@@ -40,7 +39,7 @@ module B {ℓ : Level} (G : Group {ℓ}) where
   id = L.idUniqueL (path G.0g) ((transport (PathP≡compPathR _ _ _) (conc G.0g G.0g)) ∙ cong path (G.lid G.0g)) where
     loopspace : Group {ℓ}
     loopspace = makeGroup (refl {x = base}) _∙_ sym groupoid assoc (λ x → sym (rUnit x)) (λ x → sym (lUnit x)) rCancel lCancel
-    module L = GroupLemmas loopspace
+    module L = Group loopspace
 
   recB : ∀ {ℓ'} → {A : Type ℓ'} →
     (a : A) →

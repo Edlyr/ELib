@@ -8,12 +8,12 @@ open import Cubical.HITs.SetTruncation renaming (rec to recSetTrunc)
 open import Cubical.Data.Sigma
 open import Cubical.Functions.FunExtEquiv
 open import Cubical.Functions.Embedding
+open import Cubical.Homotopy.Loopspace
+
 open import ELib.Connectedness.Base
 open import ELib.Connectedness.Properties
-open import Cubical.Homotopy.Loopspace
 open import ELib.UsefulLemmas
 open import ELib.ConcreteGroup.Base
---open import ELib.Group.Base
 
 open import Cubical.Structures.Group
 
@@ -44,10 +44,9 @@ absHom G H (f , p) =
   (p ⁻¹ ∙ cong f x ∙ p) ∙ (p ⁻¹ ∙ cong f y ∙ p) ∎
 
 homId : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupHom G H) → fst f (Group.0g G) ≡ Group.0g H
-homId G H (f , morph) = H.idUniqueL (f Ggrp.0g) (sym (cong f (sym (Ggrp.lid Ggrp.0g)) ∙ morph _ _)) where
-  module H = GroupLemmas H
-  module G = GroupLemmas G
-  module Ggrp = Group G
+homId G H (f , morph) = H.idUniqueL (f G.0g) (sym (cong f (sym (G.lid G.0g)) ∙ morph _ _)) where
+  module H = Group H
+  module G = Group G
 
 delooping : (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : GroupHom (abs G) (abs H)) (x : CG.type G) → Type (ℓ-max ℓ ℓ')
 delooping G H f x =

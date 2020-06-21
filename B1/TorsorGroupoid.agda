@@ -13,8 +13,7 @@ open import ELib.Group.Morphism
 open import ELib.UsefulLemmas
 
 module BTorsor {ℓ : Level} {G : Group {ℓ}} where
-  module G = Group G
-  open GroupLemmas G
+  private module G = Group G
   _⨀_ = G._+_
   inv = G.-_
   B : Type (ℓ-suc ℓ)
@@ -123,4 +122,3 @@ module BTorsor {ℓ : Level} {G : Group {ℓ}} where
 
   ΩB≃G : GroupIso ΩB G
   ΩB≃G = compGroupIso ΩB≃preΩB (compGroupIso (invGroupIso G' preΩB G'≃preΩB) (invGroupIso G G' (DualGroupIso G)))
-

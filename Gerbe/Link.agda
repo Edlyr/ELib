@@ -9,9 +9,12 @@ open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
 open import Cubical.Data.Sigma
 open import Cubical.Functions.Embedding
 open import Cubical.Functions.Surjection
+open import Cubical.Foundations.SIP renaming (SNS-PathP to SNS)
+
 open import ELib.UsefulLemmas
 open import ELib.Gerbe.Base
-open import Cubical.Foundations.SIP renaming (SNS-PathP to SNS)
+open import ELib.ConcreteGroup.Base
+open import ELib.ConcreteGroup.DeloopMorph
 
 private
   variable
@@ -105,8 +108,6 @@ link-by-π G x = (λ y → s-iso x y) , λ y z →
   ! t = snd (s x x) refl t ∙ sym (rUnit _ ∙ lUnit _)
 
 
-open import ELib.ConcreteGroup.Base
-open import ELib.ConcreteGroup.DeloopMorph
 
 module _ (A : AbGroup {ℓ'}) (G : B² {ℓ'} {ℓ} A) where
   open GroupIso

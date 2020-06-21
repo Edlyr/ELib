@@ -73,7 +73,6 @@ DualGroup G = makeGroup 0g (λ x y → y + x) -_ is-set (λ x y z → sym (Group
 DualGroupIso : (G : Group {ℓ}) → GroupIso G (DualGroup G)
 DualGroupIso G = groupiso (f , isEquiv-f)  isMorph-f where
   module G = Group G
-  open GroupLemmas G
   _⨀_ = G._+_
   inv = G.-_
   
@@ -81,11 +80,11 @@ DualGroupIso G = groupiso (f , isEquiv-f)  isMorph-f where
   f x = inv x
 
   isEquiv-f : isEquiv f
-  isEquiv-f = snd (isoToEquiv (iso f f invInvo invInvo))
+  isEquiv-f = snd (isoToEquiv (iso f f G.invInvo G.invInvo))
 
   isMorph-f : isGroupHom G (DualGroup G) f
   isMorph-f g h =
-    inv (g ⨀ h) ≡⟨ sym (invUniqueL ((
+    inv (g ⨀ h) ≡⟨ sym (G.invUniqueL ((
       (inv h ⨀ inv g) ⨀ (g ⨀ h)
         ≡⟨ sym (G.assoc _ _ _) ∙ cong (inv h ⨀_) (G.assoc _ _ _ ∙ cong (_⨀ h) (G.invl g) ∙ G.lid h) ⟩
       inv h ⨀ h
@@ -106,7 +105,6 @@ groupStructFromIso G (X , _⋆_) (f , eq) morph-f =
     (λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') G.0g) ∙ (G.lid (g x))))
     λ x → isInj-g _ _ (morph-g _ _ ∙ cong (_⨀ g x) (retEq (g , eq') _) ∙ G.invl (g x) ∙ sym (retEq (g , eq') G.0g))
   where
-  open GroupLemmas G
   module G = Group G
   _⨀_ = G._+_
   inv = G.-_
