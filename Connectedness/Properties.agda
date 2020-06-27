@@ -46,7 +46,7 @@ connectedComponentPath : ∀ {ℓ : Level} (A : Pointed ℓ) (x y : fst (connect
 connectedComponentPath (A , a) x y = isoToPath (iso
   (λ p → Σ≡Prop (λ _ → propTruncIsProp) p)
   (λ p → cong fst p)
-  (λ p → cong ΣPathP (Σ≡Prop (λ q → isOfHLevelPathP 1 (λ i → propTruncIsProp) _ _) refl))
+  (λ p → cong ΣPathP (Σ≡Prop (λ q → isOfHLevelPathP 1 propTruncIsProp _ _) refl))
   (λ p → refl))
 
 isConnectedConnectedComponent : (A : Pointed ℓ) → isPointConnected (fst (connectedComponent A))

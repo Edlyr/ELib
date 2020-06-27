@@ -13,6 +13,12 @@ open import ELib.Gerbe.Base
 private
   variable
     ℓ ℓ' : Level
+    
+isSetGroupHom : {G : Group {ℓ}} {H : Group {ℓ'}} → isSet (GroupHom G H)
+isSetGroupHom {G = G} {H = H} = isOfHLevelRespectEquiv 2 equiv (isSetΣ (isSetΠ λ _ → is-set H) λ _ → isProp→isSet (isPropIsGroupHom G H)) where
+  open Group
+  equiv : (Σ[ g ∈ (Carrier G → Carrier H) ] (isGroupHom G H g)) ≃ GroupHom G H 
+  equiv = isoToEquiv (iso (λ (g , m) → grouphom g m) (λ (grouphom g m) → g , m) (λ _ → refl) λ _ → refl)
 
 module S (G : Gerbe {ℓ}) where
   X = ⟨ G ⟩
@@ -35,14 +41,13 @@ module S (G : Gerbe {ℓ}) where
             id≡f : fst center ≡ f
             id≡f = equivEq _ _ (funExt λ q → rUnit _ ∙ lUnit _ ∙ sym (! refl q))
 
+  abstract
     s : (x y : X) → (x ≡ x) → (y ≡ y)
     s x y = s-def x y .fst .fst
 
     isEquiv-s : (x y : X) → isEquiv (s x y)
     isEquiv-s x y = s-def x y .fst .snd
 
-    s-eq : (x y : X) → (x ≡ x) ≃ (y ≡ y)
-    s-eq x y = s x y , isEquiv-s x y
 
     s-carac : (x y : X) (p : x ≡ y) (q : x ≡ x) → s x y q ≡ sym p ∙ q ∙ p
     s-carac x y p q = s-def x y .snd p q
@@ -50,6 +55,9 @@ module S (G : Gerbe {ℓ}) where
     s-id : (x : X) → s x x ≡ λ q → q
     s-id x = funExt λ q → s-carac x x refl q ∙ sym (rUnit _ ∙ lUnit _)
 
+  s-eq : (x y : X) → (x ≡ x) ≃ (y ≡ y)
+  s-eq x y = s x y , isEquiv-s x y
+  abstract
     s-comp : (x y z : X) → s x z ≡ s y z ∘ s x y
     s-comp x y z = recPropTrunc prop (λ py → recPropTrunc prop (λ pz →
            transport (λ i → s x (pz i) ≡ s (py i) (pz i) ∘ s x (py i)) lemma
@@ -60,6 +68,7 @@ module S (G : Gerbe {ℓ}) where
       lemma : s x x ≡ s x x ∘ s x x
       lemma = s-id x ∙ λ i → s-id x (~ i) ∘ s-id x (~ i)
 
+  abstract
     s-inv : (x y : X) → invEq (s-eq x y) ≡ s y x
     s-inv x y = recPropTrunc prop (λ p → transport (λ i → invEq (s-eq x (p i)) ≡ s (p i) x) lemma) (Gerbe.conn G x y) where
       prop : isProp (invEq (s-eq x y) ≡ s y x)
@@ -75,6 +84,7 @@ module S (G : Gerbe {ℓ}) where
           ≡⟨ sym (s-id x) ⟩
         s x x ∎
 
+  abstract
     isHom-s : (x y : X) → isGroupHom (GRP (π G x)) (GRP (π G y)) (s x y)
     isHom-s x y = recPropTrunc prop (λ p →
       transport (λ i → isGroupHom (GRP (π G x)) (GRP (π G (p i))) (s x (p i))) lemma)
@@ -90,8 +100,59 @@ module S (G : Gerbe {ℓ}) where
           ≡⟨ (λ i → s-id x (~ i) p ∙ s-id x (~ i) q) ⟩
         s x x p ∙ s x x q ∎
 
-    s-hom : (x y : X) → AbGroupHom (π G x) (π G y)
-    s-hom x y = grouphom (s x y) (isHom-s x y)
+  s-hom : (x y : X) → AbGroupHom (π G x) (π G y)
+  s-hom x y = grouphom (s x y) (isHom-s x y)
 
-    s-groupEquiv : (x y : X) → AbGroupEquiv (π G x) (π G y)
-    s-groupEquiv x y = groupequiv (s-eq x y) (isHom-s x y)
+  s-groupEquiv : (x y : X) → AbGroupEquiv (π G x) (π G y)
+  s-groupEquiv x y = groupequiv (s-eq x y) (isHom-s x y)
+
+open import ELib.B1.MorphismDelooping
+module test-deloop (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (a : ⟨ G ⟩) (b : ⟨ H ⟩) where
+  module Deloop = Delooping (Gerbe.conn G) (Gerbe.grpd H) {a = a} {b = b}
+  open S H
+  G∙ : Pointed _
+  G∙ = ⟨ G ⟩ , a
+  H∙ : Pointed _
+  H∙ = ⟨ H ⟩ , b
+  eq→ : (G∙ →∙ H∙) → AbGroupHom (π G a) (π H b)
+  eq→ (g , p) = compGroupHom (grouphom (cong g) (cong-∙ g)) (s-hom (g a) b)
+
+  eq← : AbGroupHom (π G a) (π H b) → G∙ →∙ H∙
+  eq← (grouphom f hom) = Deloop.deloop f hom .fst , sym (Deloop.deloop f hom .snd .fst)
+
+  abstract
+    sec : section eq→ eq←
+    sec (grouphom f hom) = groupHomEq _ _ _ _ ( s (g a) b ∘ cong g
+        ≡⟨ cong (s (g a) b ∘_) (funExt λ q → sym (compPathl-cancel _ _) ∙ cong (sym p ∙_) (! q)) ⟩
+        s (g a) b ∘ (λ q → sym p ∙ f q ∙ p)
+        ≡⟨ cong (s (g a) b ∘_) (cong (_∘ f) (sym (funExt (s-carac _ _ p)))) ⟩
+        s (g a) b ∘ s b (g a) ∘ f
+        ≡⟨ cong (_∘ f) (sym (s-comp _ _ _) ∙ s-id _) ⟩
+        f ∎) where
+        g = eq← (grouphom f hom) .fst
+        del = Deloop.deloop f hom
+        p = del .snd .fst
+        ! = del .snd .snd
+
+    retr : retract eq→ eq←
+    retr (g , p) = ΣPathP (cong fst deloop≡ , λ i → sym (lemma i)) where
+      f = GroupHom.fun (eq→ (g , p))
+      hom = GroupHom.isHom (eq→ (g , p))
+      deloop1 = Deloop.deloop f hom
+      deloop2 : Deloop.deloopingType f hom
+      deloop2 = g , sym p , λ q →
+        (sym p ∙ cong g q)
+          ≡⟨ sym (compPathr-cancel _ _) ∙ cong (_∙ sym p) (sym (assoc _ _ _)) ⟩
+        (sym p ∙ cong g q ∙ p) ∙ sym p
+          ≡⟨ cong (_∙ sym p) (sym (s-carac _ _ _ _)) ⟩
+        s (g a) b (cong g q) ∙ sym p ∎
+      deloop≡ : deloop1 ≡ deloop2
+      deloop≡ = Deloop.propDeloop f hom _ _
+      lemma : PathP (λ i → b ≡ fst (deloop≡ i) a) (deloop1 .snd .fst) (sym p)
+      lemma = λ i → fst (snd (deloop≡ i))
+
+  equiv : (G∙ →∙ H∙) ≃ AbGroupHom (π G a) (π H b)
+  equiv = isoToEquiv (iso eq→ eq← sec retr)
+
+  isSet→∙ : isSet (G∙ →∙ H∙)
+  isSet→∙ = isOfHLevelRespectEquiv 2 (invEquiv equiv) isSetGroupHom

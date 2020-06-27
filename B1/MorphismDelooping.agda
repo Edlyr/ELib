@@ -52,8 +52,12 @@ module Delooping {A : Type ℓ} {B : Type ℓ'} (isConnA : (x y : A) → ∥ x �
   contrC : (x : A) → isContr (C x)
   contrC x = recPropTrunc isPropIsContr (λ p → transport (λ i → isContr (C (p i))) contrCa) (isConnA a x)
 
+
+
+  isDeloop : (A → B) → Type _
+  isDeloop g = Σ[ p ∈ (b ≡ g a) ] ((q : a ≡ a) → p ∙ cong g q ≡ f q ∙ p)
   deloopingType : Type _
-  deloopingType = Σ[ g ∈ (A → B) ] Σ[ p ∈ (b ≡ g a) ] ((q : a ≡ a) → p ∙ cong g q ≡ f q ∙ p)
+  deloopingType = Σ[ g ∈ (A → B) ] (isDeloop g)
 
   deloop : deloopingType
   deloop = g , pr , carac-cong where
@@ -107,9 +111,23 @@ module Delooping {A : Type ℓ} {B : Type ℓ'} (isConnA : (x y : A) → ∥ x �
 
     path≡path' : path ≡ path'
     path≡path' = λ i → cong fst (carac-propCa i (Cg a) (Cg' a))
-      
-  
 
+
+{-module GROSTEST where
+  open import Cubical.HITs.S1
+  isConnS¹ : (x y : S¹) → ∥ x ≡ y ∥
+  isConnS¹ x y = recPropTrunc propTruncIsProp (λ px →
+    recPropTrunc propTruncIsProp (λ py → ∣ sym px ∙ py ∣) (isConnectedS¹ y)) (isConnectedS¹ x)
+  open Delooping isConnS¹ isGroupoidS¹ {a = base} {b = base} (λ p → p) (λ _ _ → refl)
+  test1 : deloopingType
+  test1 = (λ x → x) , refl , λ _ → sym (lUnit _) ∙ rUnit _
+  postulate
+    comm : (q : base ≡ base) → loop ∙ q ≡ q ∙ loop
+  test2 : deloopingType
+  test2 = (λ x → x) , loop , comm
+
+  lama : test1 ≡ test2
+  lama = propDeloop _ _-}
 
 abstract
   deloopMorphism : ∀ {ℓ} {ℓ'} {A : Type ℓ} {B : Type ℓ'} → ((x y : A) → ∥ x ≡ y ∥) → (isGroupoid B) → {a : A} {b : B}
@@ -167,6 +185,11 @@ abstract
 
     lemma1 : (q : a ≡ a) → pr ∙ cong g q ≡ f q ∙ pr
     lemma1 q = lemma0 a refl a q ∙ cong (p a) (sym (lUnit _) ∙ rUnit _) ∙ ! a q refl
+
+
+
+
+
 
 {-
 
