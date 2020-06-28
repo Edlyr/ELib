@@ -13,12 +13,6 @@ open import ELib.Gerbe.Base
 private
   variable
     ℓ ℓ' : Level
-    
-isSetGroupHom : {G : Group {ℓ}} {H : Group {ℓ'}} → isSet (GroupHom G H)
-isSetGroupHom {G = G} {H = H} = isOfHLevelRespectEquiv 2 equiv (isSetΣ (isSetΠ λ _ → is-set H) λ _ → isProp→isSet (isPropIsGroupHom G H)) where
-  open Group
-  equiv : (Σ[ g ∈ (Carrier G → Carrier H) ] (isGroupHom G H g)) ≃ GroupHom G H 
-  equiv = isoToEquiv (iso (λ (g , m) → grouphom g m) (λ (grouphom g m) → g , m) (λ _ → refl) λ _ → refl)
 
 module S (G : Gerbe {ℓ}) where
   X = ⟨ G ⟩
@@ -122,17 +116,18 @@ module test-deloop (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (a : ⟨ G ⟩) (b : ⟨
 
   abstract
     sec : section eq→ eq←
-    sec (grouphom f hom) = groupHomEq _ _ _ _ ( s (g a) b ∘ cong g
+    sec (grouphom f hom) =
+      groupHomEq (s (g a) b ∘ cong g
         ≡⟨ cong (s (g a) b ∘_) (funExt λ q → sym (compPathl-cancel _ _) ∙ cong (sym p ∙_) (! q)) ⟩
-        s (g a) b ∘ (λ q → sym p ∙ f q ∙ p)
+      s (g a) b ∘ (λ q → sym p ∙ f q ∙ p)
         ≡⟨ cong (s (g a) b ∘_) (cong (_∘ f) (sym (funExt (s-carac _ _ p)))) ⟩
-        s (g a) b ∘ s b (g a) ∘ f
+      s (g a) b ∘ s b (g a) ∘ f
         ≡⟨ cong (_∘ f) (sym (s-comp _ _ _) ∙ s-id _) ⟩
-        f ∎) where
-        g = eq← (grouphom f hom) .fst
-        del = Deloop.deloop f hom
-        p = del .snd .fst
-        ! = del .snd .snd
+      f ∎) where
+      g = eq← (grouphom f hom) .fst
+      del = Deloop.deloop f hom
+      p = del .snd .fst
+      ! = del .snd .snd
 
     retr : retract eq→ eq←
     retr (g , p) = ΣPathP (cong fst deloop≡ , λ i → sym (lemma i)) where
