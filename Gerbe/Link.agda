@@ -62,38 +62,57 @@ trivialLink G x₀ = link (λ x → s x x₀) (islink (λ x → isEquiv-s x x₀
 congHom : ∀ (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (f : ⟨ G ⟩ → ⟨ H ⟩) (x : ⟨ G ⟩) → AbGroupHom (π G x) (π H (f x))
 congHom G H f x = grouphom (cong f) (cong-∙ f)
 
-congLink : ∀ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}} →
+congLink-pnt : ∀ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}} →
   Link G A → Link H B → (⟨ G ⟩ → ⟨ H ⟩) → ⟨ G ⟩ → AbGroupHom A B
-congLink {G = G} {H = H} {A = A} {B = B} lA lB f x₀ = grouphom fun (GroupHom.isHom test) where
+congLink-pnt {G = G} {H = H} {A = A} {B = B} lA lB f x₀ = grouphom fun (GroupHom.isHom test) where
   module lA = Link lA
   module lB = Link lB
   fun : Ab⟨ A ⟩ → Ab⟨ B ⟩
   fun = lB.e (f x₀) ∘ cong f ∘ invEq (lA.eq x₀)
 
   test : AbGroupHom A B
-  test = compGroupHom (GroupEquiv.hom (invGroupEquiv _ _ (lA.group-equiv x₀))) (compGroupHom (congHom G H f x₀) (lB.hom (f x₀)))
+  test = compGroupHom (GroupEquiv.hom (invGroupEquiv (lA.group-equiv x₀))) (compGroupHom (congHom G H f x₀) (lB.hom (f x₀)))
 
-deloopType : ∀ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}} →
-  Link G A → Link H B → (AbGroupHom A B) → ⟨ G ⟩ → Type _
-deloopType {G = G} {H = H} {A = A} {B = B} lA lB f x₀ = Σ[ g ∈ (⟨ G ⟩ → ⟨ H ⟩) ] congLink lA lB g x₀ ≡ f
+module _ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}}
+  (lA : Link G A) (lB : Link H B) (g : ⟨ G ⟩ → ⟨ H ⟩) where
+  congLinkType : Type _
+  congLinkType = Σ[ f ∈ (AbGroupHom A B) ] ((x : ⟨ G ⟩) → f ≡ congLink-pnt lA lB g x)
 
-deloop : ∀ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}} →
-  (lA : Link G A) (lB : Link H B) (f : AbGroupHom A B) (x₀ : ⟨ G ⟩) (y₀ : ⟨ H ⟩)→ isContr (deloopType lA lB f x₀)
-deloop {G = G} {H = H} lA lB f x₀ y₀ = {!!} where
+  isPropCongLinkType : isProp congLinkType
+  isPropCongLinkType = recPropTrunc isPropIsProp
+    (λ x f f' → Σ≡Prop (λ _ → isPropΠ λ _ → isSetGroupHom _ _) (snd f x ∙ sym (snd f' x)))
+    (Gerbe.inhabited G)
+
+  congLink-def : congLinkType
+  congLink-def = recPropTrunc isPropCongLinkType (λ x₀ → congLink-pnt lA lB g x₀ , lemma x₀) (Gerbe.inhabited G) where
+    lemma : (x y : ⟨ G ⟩) → congLink-pnt lA lB g x ≡ congLink-pnt lA lB g y
+    lemma x y = recPropTrunc (isSetGroupHom _ _) (cong (λ x → congLink-pnt lA lB g x)) (Gerbe.conn G x y)
+
+  congLink : AbGroupHom A B
+  congLink = fst congLink-def
+
+  congLink-carac : (x : ⟨ G ⟩) → congLink ≡ congLink-pnt lA lB g x
+  congLink-carac = snd congLink-def
+
+module _ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}}
+  (lA : Link G A) (lB : Link H B) (f : AbGroupHom A B) (x₀ : ⟨ G ⟩) (y₀ : ⟨ H ⟩) where
+  deloopType : Type _
+  deloopType = Σ[ g ∈ (⟨ G ⟩ → ⟨ H ⟩) ] (y₀ ≡ g x₀) × (congLink lA lB g ≡ f)
+
   module lA = Link lA
   module lB = Link lB
   f' : x₀ ≡ x₀ → y₀ ≡ y₀
   f' = invEq (lB.eq y₀) ∘ GroupHom.fun f ∘ lA.e x₀
 
   f'test : AbGroupHom (π G x₀) (π H y₀)
-  f'test = compGroupHom (lA.hom x₀) (compGroupHom f (GroupEquiv.hom (invGroupEquiv _ _ (lB.group-equiv y₀))))
+  f'test = compGroupHom (lA.hom x₀) (compGroupHom f (GroupEquiv.hom (invGroupEquiv (lB.group-equiv y₀))))
 
   module Deloop = Delooping (Gerbe.conn G) (Gerbe.grpd H) f' (GroupHom.isHom f'test)
 
-  test : deloopType lA lB f x₀ ≃ Deloop.deloopingType
-  test = isoToEquiv (iso lama1 {!lB.s-carac _ _ p _!} {!!} {!!}) where
-    pre-lama1 : (g : deloopType lA lB f x₀) → (y₀ ≡ g .fst x₀) → Deloop.deloopingType
-    pre-lama1 (g , coh) p = g , p ,
+  caracDeloopType : deloopType ≃ Deloop.deloopingType
+  caracDeloopType = isoToEquiv (iso eq→ eq← sec retr) where
+    eq→ : deloopType → Deloop.deloopingType
+    eq→ (g , p , coh) = g , p ,
       λ q → 
         p ∙ cong g q
           ≡⟨ cong (p ∙_) (λ i → testok i q) ⟩
@@ -108,29 +127,42 @@ deloop {G = G} {H = H} lA lB f x₀ y₀ = {!!} where
         cong g
           ≡⟨ (λ i → funExt (secEq (lB.eq (g x₀))) (~ i) ∘ cong g ∘ funExt (secEq (lA.eq x₀)) (~ i)) ⟩
         invEq (lB.eq (g x₀)) ∘ lB.e (g x₀) ∘ cong g ∘ invEq (lA.eq x₀) ∘ lA.e x₀
-          ≡⟨ cong (λ r → invEq (lB.eq (g x₀)) ∘ r ∘ lA.e x₀) (cong GroupHom.fun coh) ⟩
+          ≡⟨ cong (λ r → invEq (lB.eq (g x₀)) ∘ r ∘ lA.e x₀) (cong GroupHom.fun (sym (congLink-carac lA lB g x₀) ∙ coh)) ⟩
         invEq (lB.eq (g x₀)) ∘ GroupHom.fun f ∘ lA.e x₀
           ≡⟨ cong (λ r → r ∘ GroupHom.fun f ∘ lA.e x₀) (lB.coherence-inv (g x₀) y₀) ⟩
         S.s H y₀ (g x₀) ∘ f' ∎
 
-    lama1 : deloopType lA lB f x₀ → Deloop.deloopingType
-    lama1 (g , coh) = recPropTrunc Deloop.propDeloop (λ p → pre-lama1 (g , coh) p) (Gerbe.conn H y₀ (g x₀))
-        
-    lama2 : Deloop.deloopingType → deloopType lA lB f x₀
-    lama2 (g , p , !) = g , {!!}
+    eq← : Deloop.deloopingType → deloopType
+    eq← (g , p , !) = g , p , congLink-carac lA lB g x₀ ∙ groupHomEq (
+      lB.e (g x₀) ∘ cong g ∘ invEq (lA.eq x₀)
+        ≡⟨ cong (λ h → lB.e (g x₀) ∘ h ∘ cong g ∘ invEq (lA.eq x₀)) (sym (S.s-id H (g x₀)) ∙ S.s-comp H _ _ _) ⟩
+      lB.e (g x₀) ∘ S.s H y₀ (g x₀) ∘ S.s H (g x₀) y₀ ∘ cong g ∘ invEq (lA.eq x₀)
+        ≡⟨ cong (λ h → h ∘ S.s H (g x₀) y₀ ∘ cong g ∘ invEq (lA.eq x₀)) (sym (lB.coherence y₀ (g x₀))) ⟩
+      lB.e y₀ ∘ S.s H (g x₀) y₀ ∘ cong g ∘ invEq (lA.eq x₀)
+        ≡⟨ cong (λ h → lB.e y₀ ∘ h ∘ cong g ∘ invEq (lA.eq x₀)) (funExt (S.s-carac H _ _ (sym p))) ⟩
+      lB.e y₀ ∘ (λ q → p ∙ cong g q ∙ sym p) ∘ invEq (lA.eq x₀)
+        ≡⟨ cong (λ h → lB.e y₀ ∘ h ∘ invEq (lA.eq x₀)) (funExt λ q →
+          p ∙ cong g q ∙ sym p
+            ≡⟨ assoc _ _ _ ∙ cong (_∙ sym p) (! q) ⟩
+          (f' q ∙ p) ∙ sym p
+            ≡⟨ compPathr-cancel _ _ ⟩
+          f' q ∎
+        )⟩
+      lB.e y₀ ∘ f' ∘ invEq (lA.eq x₀)
+        ≡⟨ refl ⟩
+      lB.e y₀ ∘ invEq (lB.eq y₀) ∘ GroupHom.fun f ∘ lA.e x₀ ∘ invEq (lA.eq x₀)
+        ≡⟨ (λ i → funExt (retEq (lB.eq y₀)) i ∘ GroupHom.fun f ∘ funExt (retEq (lA.eq x₀)) i) ⟩
+      GroupHom.fun f ∎)
 
-    sec : section lama1 lama2
+    sec : section eq→ eq←
     sec (g , p , !) = Deloop.propDeloop _ _
 
-    retr : retract lama1 lama2
-    retr (g , coh) = Σ≡Prop (λ _ → isSetGroupHom _ _) (recPropTrunc {!!} pingouin (Gerbe.conn H y₀ (g x₀))) where
-      pingouin : y₀ ≡ g x₀ → lama2 (lama1 (g , coh)) .fst ≡ g
-      pingouin p =
-        lama2 (lama1 (g , coh)) .fst
-          ≡⟨ cong (λ r → lama2 r .fst) (Deloop.propDeloop (lama1 (g , coh)) (pre-lama1 (g , coh) p)) ⟩
-        lama2 (pre-lama1 (g , coh) p) .fst
-          ≡⟨ refl ⟩
-        g ∎
+    retr : retract eq→ eq←
+    retr (g , coh) = ΣPathP (refl , Σ≡Prop (λ _ → isSetGroupHom _ _) refl)
+
+  deloopUnique : isContr deloopType
+  deloopUnique = isOfHLevelRespectEquiv 0 (invEquiv caracDeloopType) (Deloop.deloop , Deloop.propDeloop _)
+
 
 {-
 open import Cubical.Foundations.Everything
