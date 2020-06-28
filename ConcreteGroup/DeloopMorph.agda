@@ -26,9 +26,9 @@ abs : ∀ {ℓ} → ConcreteGroup ℓ → Group {ℓ}
 abs G = makeGroup (refl {x = pnt}) _∙_ sym grpd assoc (sym ∘ rUnit) (sym ∘ lUnit) rCancel lCancel where
   open CG G
 
-absHom : ∀ {ℓ} (G H : ConcreteGroup ℓ) (f : CG.Ptd G →∙ CG.Ptd H) → (GroupHom (abs G) (abs H))
-absHom G H (f , p) =
-  (λ q → p ⁻¹ ∙ cong f q ∙ p) , λ x y →
+absHom : (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : CG.Ptd G →∙ CG.Ptd H) → (GroupHom (abs G) (abs H))
+absHom G H (f , p) = grouphom
+  (λ q → p ⁻¹ ∙ cong f q ∙ p) (λ x y →
   p ⁻¹ ∙ cong f (x ∙ y) ∙ p
     ≡⟨ cong (λ r → p ⁻¹ ∙ r ∙ p) (cong-∙ f x y) ⟩
   p ⁻¹ ∙ (cong f x ∙ cong f y) ∙ p
@@ -41,25 +41,25 @@ absHom G H (f , p) =
     ≡⟨ cong (λ r → p ⁻¹ ∙ cong f x ∙ r) (sym (assoc _ _ _)) ⟩
   p ⁻¹ ∙ cong f x ∙ p ∙ p ⁻¹ ∙ cong f y ∙ p
     ≡⟨ assoc _ _ _ ∙ assoc _ _ _ ∙ cong (λ r → r ∙ p ⁻¹ ∙ cong f y ∙ p) (sym (assoc _ _ _)) ⟩
-  (p ⁻¹ ∙ cong f x ∙ p) ∙ (p ⁻¹ ∙ cong f y ∙ p) ∎
+  (p ⁻¹ ∙ cong f x ∙ p) ∙ (p ⁻¹ ∙ cong f y ∙ p) ∎)
 
-homId : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupHom G H) → fst f (Group.0g G) ≡ Group.0g H
-homId G H (f , morph) = H.idUniqueL (f G.0g) (sym (cong f (sym (G.lid G.0g)) ∙ morph _ _)) where
-  module H = Group H
-  module G = Group G
+homId : (G : Group {ℓ}) (H : Group {ℓ'}) (f : GroupHom G H) → GroupHom.fun f (Group.0g G) ≡ Group.0g H
+homId G H (grouphom f morph) = H.idUniqueL (f G.0g) (sym (cong f (sym (G.lid G.0g)) ∙ morph _ _)) where
+  module H = GroupLemmas H
+  module G = GroupLemmas G
 
 delooping : (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : GroupHom (abs G) (abs H)) (x : CG.type G) → Type (ℓ-max ℓ ℓ')
 delooping G H f x =
   Σ[ y ∈ H.type ]
   Σ[ p ∈ ((G.pnt ≡ x) → (H.pnt ≡ y)) ]
-    ((ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ fst f ω ∙ p α)
+    ((ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ GroupHom.fun f ω ∙ p α)
   where
   module G = ConcreteGroup G
   module H = ConcreteGroup H
 
 deloopingBis : (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : GroupHom (abs G) (abs H)) (x : CG.type G) → Type (ℓ-max ℓ ℓ')
-deloopingBis G H f x =
-  Σ[ y ∈ H.type ] ((p : G.pnt ≡ x → H.pnt ≡ y) (ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ fst f ω ∙ p α)
+deloopingBis G H (grouphom f _) x =
+  Σ[ y ∈ H.type ] ((p : G.pnt ≡ x → H.pnt ≡ y) (ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ f ω ∙ p α)
   where
   module G = ConcreteGroup G
   module H = ConcreteGroup H
@@ -73,8 +73,8 @@ deloopingContr G H ϕ x =
   module H = ConcreteGroup H
   a = G.pnt
   b = H.pnt
-  f = fst ϕ
-  fmorph = snd ϕ
+  f = GroupHom.fun ϕ
+  fmorph = GroupHom.isHom ϕ
   equiv1 : delooping G H ϕ a ≃ (Σ[ y ∈ H.type ] Σ[ p ∈ (G.El → H.pnt ≡ y) ] ((ω : G.El) → p ω ≡ f ω ∙ p refl))
   equiv1 = isoToEquiv (iso
     (λ (y , p , h) → y , p , λ ω → p ω ≡⟨ cong p (rUnit ω) ⟩ p (ω ∙ refl) ≡⟨ h ω refl ⟩ f ω ∙ p refl ∎)
@@ -95,49 +95,3 @@ deloopingContr G H ϕ x =
 
   contr-a : isContr (Σ[ y ∈ H.type ] (b ≡ y))
   contr-a = (b , refl) , λ (b' , p) → ΣPathP (p , λ i j → p (i ∧ j))
-
-{-
-deloop : ∀ {ℓ} (G H : ConcreteGroup ℓ) (f : GroupHom (abs G) (abs H)) → (CG.Ptd G →∙ CG.Ptd H)
-deloop {ℓ} Ggrp Hgrp ϕ = (λ x → fst (fst (isContrC x))) , sym (snd (fst lemma2 (fst lemma1 (fst (isContrC a))))) where
-  module G = ConcreteGroup Ggrp
-  module H = ConcreteGroup Hgrp
-  a = G.pnt
-  b = H.pnt
-  f = fst ϕ
-  fmorph = snd ϕ
-  C : G.type → Type ℓ
-  C x = Σ[ y ∈ H.type ]
-        Σ[ p ∈ ((G.pnt ≡ x) → (H.pnt ≡ y)) ]
-        ((ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ f ω ∙ p α)
-  lemma1 : C a ≃ (Σ[ y ∈ H.type ] Σ[ p ∈ (G.El → H.pnt ≡ y) ] ((ω : G.El) → p ω ≡ f ω ∙ p refl))
-  lemma1 = isoToEquiv (iso
-    (λ (y , p , h) → y , p , λ ω → p ω ≡⟨ cong p (rUnit ω) ⟩ p (ω ∙ refl) ≡⟨ h ω refl ⟩ f ω ∙ p refl ∎)
-    (λ (y , p , h) → y , p , λ ω α →
-      p (ω ∙ α)
-        ≡⟨ h (ω ∙ α) ∙ cong (λ r → r ∙ p refl) (fmorph _ _) ∙ sym (assoc _ _ _)⟩
-      f ω ∙ f α ∙ p refl
-        ≡⟨ cong (λ r → f ω ∙ r) (sym (h α)) ⟩
-      f ω ∙ p α ∎)
-    (λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → CG.isGrpd Hgrp _ _ _ _) refl))
-    (λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ2 λ _ _ → CG.isGrpd Hgrp _ _ _ _) refl)))
-  lemma2 : (Σ[ y ∈ H.type ] Σ[ p ∈ (G.El → H.pnt ≡ y) ] ((ω : G.El) → p ω ≡ f ω ∙ p refl)) ≃ (Σ[ y ∈ H.type ] (b ≡ y))
-  lemma2 = isoToEquiv (iso
-    (λ (y , p , h) → y , p refl)
-    (λ (y , pRefl) → y , (λ ω → f ω ∙ pRefl) , λ ω → cong (λ r → f ω ∙ r) (lUnit pRefl ∙ cong (λ r → r ∙ pRefl) (sym (homId (abs Ggrp) (abs Hgrp) ϕ))))
-    (λ (y , pRefl) → ΣPathP (refl , sym (lUnit _ ∙ cong (λ r → r ∙ pRefl) (sym (homId (abs Ggrp) (abs Hgrp) ϕ)))))
-    λ (y , p , h) → ΣPathP (refl , ΣProp≡ (λ _ → isPropΠ λ _ → CG.isGrpd Hgrp _ _ _ _) (funExt λ ω → sym (h ω))))
-  isContrCa : isContr (C a)
-  isContrCa = transport (cong isContr (sym (ua (compEquiv lemma1 (compEquiv lemma2 (isoToEquiv
-    (iso (λ _ → tt) (λ _ → b , refl) (λ {tt → refl}) λ (y , p) → ΣPathP (p , λ i j → p (i ∧ j))))))))) isContrUnit
-  isContrC : (x : G.type) → isContr (C x)
-  isContrC x = recPropTrunc isPropIsContr (λ p → transport (cong (λ x → isContr (C x)) p) isContrCa) (G.conn x)
--}
-{-deloop : ∀ {ℓ} {ℓ'} (G : ConcreteGroup ℓ) (H : ConcreteGroup ℓ') (f : CG.El G → CG.El H) → ((x y : CG.El G) → f (x ∙ y) ≡ f x ∙ f y) → (CG.type G → CG.type H)
-deloop {ℓ} {ℓ'} Ggrp Hgrp f morph = {!!} where
-  module G = CG Ggrp
-  module H = CG Hgrp
-  C : G.type → Type (ℓ-max ℓ ℓ')
-  C x = Σ[ y ∈ H.type ]
-        Σ[ p ∈ ((G.pnt ≡ x) → (H.pnt ≡ y)) ]
-        ((ω : G.pnt ≡ G.pnt) (α : G.pnt ≡ x) → p (ω ∙ α) ≡ (f ω) ∙ p α)
--}

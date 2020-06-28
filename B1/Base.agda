@@ -39,7 +39,7 @@ module B {ℓ : Level} (G : Group {ℓ}) where
   id = L.idUniqueL (path G.0g) ((transport (PathP≡compPathR _ _ _) (conc G.0g G.0g)) ∙ cong path (G.lid G.0g)) where
     loopspace : Group {ℓ}
     loopspace = makeGroup (refl {x = base}) _∙_ sym groupoid assoc (λ x → sym (rUnit x)) (λ x → sym (lUnit x)) rCancel lCancel
-    module L = Group loopspace
+    module L = GroupLemmas loopspace
 
   recB : ∀ {ℓ'} → {A : Type ℓ'} →
     (a : A) →
@@ -61,7 +61,7 @@ module B {ℓ : Level} (G : Group {ℓ}) where
     lemma : SquareP (λ i j → A (conc g h i j)) (pA g) (pA (g ⨀ h)) (λ i → a) (pA h)
     lemma = toPathP (subLemma _ _) where
       subLemma : isProp (PathP (λ i → A (path (g ⨀ h) i)) a a)
-      subLemma = isOfHLevelPathP' 1 (λ i → set (path (g ⨀ h) i)) a a
+      subLemma = isOfHLevelPathP' 1 (set _) a a
   elimBSet {ℓ'} {A} set a pA (groupoid p q r s i j k) = isOfHLevel→isOfHLevelDep 3 (λ b → isSet→isGroupoid (set b)) a a
     (cong f p) (cong f q) (cong (cong f) r) (cong (cong f) s) (groupoid p q r s) i j k where
     f = elimBSet {ℓ'} {A} set a pA
@@ -146,7 +146,7 @@ module Test {ℓ : Level} (A : Type ℓ) (a : A) (grpd : isGroupoid A) (conn : (
   BG = B.B G
 
   A→BG : _
-  A→BG = deloopMorphism conn BG.isGroupoidB (fst BG.G→∙ΩBG) λ x y → sym (BG.conc' x y)
+  A→BG = Delooping.deloop conn BG.isGroupoidB (fst BG.G→∙ΩBG) λ x y → sym (BG.conc' x y)
 
   --BG→A : _
   --BG→A = deloopMorphism (BG.elimBProp (λ _ → isPropΠ λ _ → propTruncIsProp) BG.isConnectedB) grpd (fst BG.ΩBG→∙G)

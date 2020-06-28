@@ -40,7 +40,7 @@ CubeP A a₀₋₋ a₁₋₋ a₋₀₋ a₋₁₋ a₋₋₀ a₋₋₁ = Path
 
 module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   module G = GroupLemmas (AbGroup→Group G)
-  _⨀_ = G.op
+  _⨀_ = G._+_
   data B² : Type ℓ where
     base : B²
     surf : ⟨ G ⟩ → refl {x = base} ≡ refl {x = base}
@@ -70,11 +70,7 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
     cube : CubeP (λ i j k → A (conc g h i j k)) (pA g) (pA (g ⨀ h)) (refl {x = refl {x = a}}) (pA h) (refl {x = refl {x = a}}) (refl {x = refl {x = a}})
     cube = toPathP (lemma1 _ _) where
       lemma1 : isProp (typeof (pA (g ⨀ h)))
-      lemma1 x y = isOfHLevelPathP' 1 lemma2 _ _ _ _ where
-        lemma2 : (i : I) → isSet (PathP (λ j → A (surf (g ⨀ h) i j)) a a)
-        lemma2 i = isOfHLevelPathP' 2 (lemma3 i) _ _ where
-          lemma3 : (i j : I) → isGroupoid (A (surf (g ⨀ h) i j))
-          lemma3 i j = grpd _
+      lemma1 = isOfHLevelPathP' 1 (isOfHLevelPathP' 2 (grpd _) _ _) _ _
   elimB²grpd grpd a pA (2grpd p q r s i j k l) =
     isOfHLevel→isOfHLevelDep 4 (λ x → isOfHLevelSuc 3 (grpd x)) a a (refl {x = a}) (refl {x = a}) (X p) (X q) (cong X r) (cong X s) (2grpd p q r s) i j k l where
       X = cong (cong (elimB²grpd grpd a pA))
@@ -92,12 +88,12 @@ module B² {ℓ : Level} (G : AbGroup {ℓ}) where
   isConnectedB² : (x : B²) → ∥ base ≡ x ∥₋₁
   isConnectedB² = elimB²prop (λ _ → propTruncIsProp) ∣ refl ∣₋₁
 
-  isConnB² : isHLevelConnected 2 B²
+  isConnB² : isConnected 2 B²
   isConnB² = ∣ base ∣ₙ , elimHTrunc (λ x → isProp→isSet (lemma x)) (elimB²prop (λ b → lemma ∣ b ∣ₙ) refl) where
     lemma : (x : hLevelTrunc 2 B²) → isProp (∣ base ∣ₙ ≡ x)
     lemma = isOfHLevelTrunc 2 ∣ base ∣ₙ
 
-  isSimplyConnB² : isHLevelConnected 3 B²
+  isSimplyConnB² : isConnected 3 B²
   isSimplyConnB² = ∣ base ∣ₙ , elimHTrunc (λ x → isSet→isGroupoid (lemma x)) (elimB²set (λ b → lemma ∣ b ∣ₙ) refl) where
     lemma : (x : hLevelTrunc 3 B²) → isSet (∣ base ∣ₙ ≡ x)
     lemma = isOfHLevelTrunc 3 ∣ base ∣ₙ
