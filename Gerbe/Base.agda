@@ -14,21 +14,6 @@ private
   variable
     ℓ : Level
 
-{-
-open import Cubical.Foundations.Equiv
-open import Cubical.Foundations.Isomorphism
-isSetGroupEquiv : ∀ {ℓ ℓ' : Level} (G₁ : Group {ℓ}) (G₂ : Group {ℓ'}) → isSet (GroupEquiv G₁ G₂)
-isSetGroupEquiv G₁ G₂ = isOfHLevelRespectEquiv 2 lemma
-  (isSetΣ (isSetΣ (isOfHLevelΠ 2 λ _ → Group.is-set G₂) λ _ → isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom G₁ G₂))
-  where
-  open GroupEquiv
-  X₁ = Group.Carrier G₁
-  X₂ = Group.Carrier G₂
-  lemma : (Σ[ f ∈ X₁ ≃ X₂ ] isGroupHom G₁ G₂ (equivFun f)) ≃ GroupEquiv G₁ G₂
-  lemma = isoToEquiv (iso (λ (f , m) → groupequiv f m) (λ (groupequiv f m) → f , m) (λ _ → refl) λ _ → refl)
--}
--------------------
-
 record IsGerbe (X : Type ℓ) : Type ℓ where
   constructor isgerbe
   field
