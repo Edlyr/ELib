@@ -16,7 +16,7 @@ open import ELib.UsefulLemmas
 
 private
   variable
-    ℓ ℓ' : Level
+    ℓ ℓ' ℓ'' : Level
 
 record IsLink (G : Gerbe {ℓ}) (A : AbGroup {ℓ'}) (e : (x : ⟨ G ⟩) → Ab⟨ π G x ⟩ → Ab⟨ A ⟩) : Type (ℓ-max ℓ ℓ') where
   constructor islink
@@ -94,6 +94,27 @@ module _ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {
 
     congLink-carac : (x : ⟨ G ⟩) → congLink ≡ congLink-pnt lA lB g x
     congLink-carac = snd congLink-def
+
+congLink-comp : ∀ {ℓA ℓB ℓC} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {F : Gerbe {ℓ''}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}} {C : AbGroup {ℓC}}
+  (lA : Link G A) (lB : Link H B) (lC : Link F C) (g : ⟨ G ⟩ → ⟨ H ⟩) (f : ⟨ H ⟩ → ⟨ F ⟩) →
+  congLink lA lC (f ∘ g) ≡ compGroupHom (congLink lA lB g) (congLink lB lC f)
+congLink-comp {G = G} {H = H} lA lB lC g f = recPropTrunc (isSetGroupHom _ _) lemma (Gerbe.inhabited G) where
+  lemma : (x : ⟨ G ⟩) → congLink lA lC (f ∘ g) ≡ compGroupHom (congLink lA lB g) (congLink lB lC f)
+  lemma x =
+    congLink lA lC (f ∘ g)
+      ≡⟨ congLink-carac lA lC (f ∘ g) x ⟩
+    congLink-pnt lA lC (f ∘ g) x
+      ≡⟨ groupHomEq subLemma ⟩
+    compGroupHom (congLink-pnt lA lB g x) (congLink-pnt lB lC f (g x))
+      ≡⟨ (λ i → compGroupHom (congLink-carac lA lB g x (~ i)) (congLink-carac lB lC f (g x) (~ i))) ⟩
+    compGroupHom (congLink lA lB g) (congLink lB lC f) ∎ where
+    module lA = Link lA
+    module lB = Link lB
+    module lC = Link lC
+    subLemma : lC.e (f (g x)) ∘ (cong (f ∘ g)) ∘ invEq (lA.eq x) ≡
+               lC.e (f (g x)) ∘ cong f ∘ invEq (lB.eq (g x)) ∘ lB.e (g x) ∘ cong g ∘ invEq (lA.eq x)
+    subLemma = cong (λ r → lC.e (f (g x)) ∘ cong f ∘ r ∘ cong g ∘ invEq (lA.eq x))
+      (sym (funExt (secEq (lB.eq (g x)))))
 
 module _ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {B : AbGroup {ℓB}}
   (lA : Link G A) (lB : Link H B) (f : AbGroupHom A B) (x₀ : ⟨ G ⟩) (y₀ : ⟨ H ⟩) where

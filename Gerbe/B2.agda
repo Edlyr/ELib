@@ -30,22 +30,48 @@ module _ (A : AbGroup {ℓ}) where
     open Gerbe grb public
     open Link lnk public
 
-  record B²Hom (G H : B²) : Type ℓ where
-    constructor b²hom
+  record B²Equiv (G H : B²) : Type ℓ where
+    constructor b²equiv
     module G = B² G
     module H = B² H
     field
       fun : G.Carrier → H.Carrier
-      test : congLink G.lnk H.lnk fun ≡ grouphom (λ x → x) (λ _ _ → refl)
+      p : congLink G.lnk H.lnk fun ≡ grouphom (λ x → x) (λ _ _ → refl)
 
-  record B²Equiv (G H : B²) : Type ℓ where
+    abstract
+      isEquiv-fun : isEquiv fun
+      isEquiv-fun = isEmbedding×isSurjection→isEquiv (embed , surj) where
+        lemma : (x : G.Carrier) → isEquiv (cong {x = x} {y = x} fun)
+        lemma x = transport (cong isEquiv (sym p')) (snd (compEquiv (G.eq x) (invEquiv (H.eq (fun x))))) where
+          p' : (cong {x = x} {y = x} fun) ≡ invEq (H.eq (fun x)) ∘ G.e x
+          p' =
+            cong {x = x} {y = x} fun
+              ≡⟨ (λ i → funExt (secEq (H.eq (fun x))) (~ i) ∘ cong fun ∘ funExt (secEq (G.eq x)) (~ i)) ⟩
+            invEq (H.eq (fun x)) ∘ H.e (fun x) ∘ cong {x = x} {y = x} fun ∘ invEq (G.eq x) ∘ G.e x
+              ≡⟨ cong (λ r → invEq (H.eq (fun x)) ∘ r ∘ G.e x) (sym (cong GroupHom.fun (congLink-carac G.lnk H.lnk fun x))) ⟩
+            invEq (H.eq (fun x)) ∘ GroupHom.fun (congLink G.lnk H.lnk fun) ∘ G.e x
+              ≡⟨ cong (λ r → invEq (H.eq (fun x)) ∘ r ∘ G.e x) (cong GroupHom.fun p) ⟩
+            invEq (H.eq (fun x)) ∘ G.e x ∎
+
+        embed : isEmbedding fun
+        embed x y = recPropTrunc (isPropIsEquiv _) (subLemma x y) (G.conn x y) where
+          subLemma : (x y : _) (p : x ≡ y) → isEquiv (cong {x = x} {y = y} fun)
+          subLemma x y = J (λ y p → isEquiv (cong {x = x} {y = y} fun)) (lemma x)
+
+        surj : isSurjection fun
+        surj y = recPropTrunc propTruncIsProp (λ x → recPropTrunc propTruncIsProp (λ p → ∣ x , p ∣) (H.conn (fun x) y)) (G.inhabited)
+
+    eq : G.Carrier ≃ H.Carrier
+    eq = fun , isEquiv-fun
+
+{-  record B²Equiv (G H : B²) : Type ℓ where
     constructor b²equiv
     module G = B² G
     module H = B² H
     field
       eq : G.Carrier ≃ H.Carrier
       p : congLink G.lnk H.lnk (equivFun eq) ≡ grouphom (λ x → x) (λ _ _ → refl)
-
+-}
 isSetGroupEquiv : {A : Group {ℓ}} {B : Group {ℓ'}} → isSet (GroupEquiv A B)
 isSetGroupEquiv {A = A} {B = B} = isOfHLevelRespectEquiv 2 (invEquiv lemma) (isSetΣ (isSetΠ λ _ → Group.is-set B)
   λ _ → isSetΣ (isProp→isSet (isPropIsEquiv _)) λ _ → isProp→isSet (isPropIsGroupHom A B)) where
@@ -150,10 +176,10 @@ module B²ΣTheory (A : AbGroup {ℓ}) where
   B²EquivΣ X Y = B²→B²Σ X ≃[ B²EquivStr ] B²→B²Σ Y
 
   B²IsoΣPath : {X Y : B² A} → Iso (B²Equiv A X Y) (B²EquivΣ X Y)
-  fun B²IsoΣPath (b²equiv eq p) = eq , p
-  inv B²IsoΣPath (eq , p)       = b²equiv eq p
-  rightInv B²IsoΣPath _         = refl
-  leftInv  B²IsoΣPath _         = refl
+  fun B²IsoΣPath eq             = B²Equiv.eq eq , B²Equiv.p eq
+  inv B²IsoΣPath (eq , p)       = b²equiv (fst eq) p
+  rightInv B²IsoΣPath b         = ΣPathP (equivEq _ _ refl , refl)
+  leftInv  B²IsoΣPath eq        = refl
 
   B²Path : (X Y : B² A) → (B²Equiv A X Y) ≃ (X ≡ Y)
   B²Path X Y =
@@ -166,8 +192,8 @@ module B²ΣTheory (A : AbGroup {ℓ}) where
   uaB² = equivFun (B²Path _ _)
 
   carac-uaB² : {X Y : B² A} → (f : B²Equiv A X Y) → (cong B².Carrier (uaB² f)) ≡ ua (B²Equiv.eq f)
-  carac-uaB² (b²equiv f p) =
-    (refl ∙∙ ua f ∙∙ refl) ≡⟨ sym (rUnit _) ⟩ ua f ∎
+  carac-uaB² e = (refl ∙∙ ua eq ∙∙ refl) ≡⟨ sym (rUnit _) ⟩ ua eq ∎ where
+    open B²Equiv e
 
 module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) where
   open B²
@@ -192,19 +218,69 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       del = deloopType l1 l2 (grouphom (λ x → x) (λ _ _ → refl)) h1 h2
       unique : isContr del
       unique = deloopUnique l1 l2 (grouphom (λ x → x) (λ _ _ → refl)) h1 h2
-      
+
+      pre-test : B²Equiv B H1 H2
+      pre-test = b²equiv (fst unique .fst) (fst unique .snd .snd)
       test : H1 ≡ H2
-      test = uaB² (b²equiv (fst unique .fst , {!!}) (fst unique .snd .snd))
+      test = uaB² pre-test
 
       testg2 : deloopType lG l2 f x h2
       testg2 = g2 , refl , !2
 
       testg1 : deloopType lG l2 f x h2
-      testg1 = transport (λ i → G.Carrier → B².Carrier (test i)) g1 , {!!} , {!!}
+      testg1 = transport (λ i → G.Carrier → B².Carrier (test i)) g1 , pointed , funeq where
+        pointed : h2 ≡ transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 x
+        pointed =
+          h2
+            ≡⟨ fst unique .snd .fst ⟩
+          fst (fst unique) h1
+            ≡⟨ sym (uaβ (B²Equiv.eq pre-test) h1) ⟩
+          transport (ua (B²Equiv.eq pre-test)) h1
+            ≡⟨ sym (cong (λ r → transport r h1) (carac-uaB² pre-test)) ⟩
+          transport (λ i → Gerbe.Carrier (grb (test i))) h1
+            ≡⟨ (λ i → transport→R _ G.Carrier _ _ _ test g1 (~ i) x) ⟩
+          transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 x ∎
 
+        funeq : congLink lG l2 (transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1) ≡ f
+        funeq =
+          congLink lG l2 (transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1)
+            ≡⟨ cong (congLink lG l2) subLemma ⟩
+          congLink lG l2 (B²Equiv.fun pre-test ∘ g1)
+            ≡⟨ congLink-comp lG l1 l2 g1 (B²Equiv.fun pre-test) ⟩
+          compGroupHom (congLink lG l1 g1) (congLink l1 l2 (B²Equiv.fun pre-test))
+            ≡⟨ cong (compGroupHom (congLink lG l1 g1)) (B²Equiv.p pre-test) ⟩
+          compGroupHom (congLink lG l1 g1) (grouphom (λ x → x) (λ _ _ → refl))
+            ≡⟨ cong (λ r → compGroupHom r (grouphom (λ x → x) (λ _ _ → refl))) !1 ⟩
+          compGroupHom f (grouphom (λ x → x) (λ _ _ → refl))
+            ≡⟨ groupHomEq refl ⟩
+          f ∎ where
+          subLemma : transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 ≡ B²Equiv.fun pre-test ∘ g1
+          subLemma = 
+            _
+              ≡⟨ transport→R _ G.Carrier _ H1 H2 test g1 ⟩
+            (λ a → transport (λ i → Gerbe.Carrier (grb (test i))) (g1 a))
+              ≡⟨ (λ i a → transport (carac-uaB² pre-test i) (g1 a)) ⟩
+            (λ a → transport (ua (B²Equiv.eq pre-test)) (g1 a))
+              ≡⟨ funExt (λ a → uaβ (B²Equiv.eq pre-test) (g1 a)) ⟩
+            B²Equiv.fun pre-test ∘ g1 ∎
+          
       testg1≡testg2 : testg1 ≡ testg2
       testg1≡testg2 = isContr→isProp (deloopUnique lG l2 f x h2) _ _
 
+  2-deloop-def : (G : B² A) → type G
+  2-deloop-def G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
+    postulate
+      H : B² B -- H can be replaced by the gerbe of B-torsors
+      h : B².Carrier H -- and h can be replaced by the principal B-torsor
+    module G = B² G
+    module H = B² H
+    lemma : B².Carrier G → type G
+    lemma x = H , fst deloop , snd (snd deloop) where
+      deloop : deloopType G.lnk H.lnk f x h 
+      deloop = deloopUnique _ _ _ _ _ .fst
+
+  2-deloop : B² A → B² B
+  2-deloop = fst ∘ 2-deloop-def
 
 {-
 GRP = AbGroup→Group
