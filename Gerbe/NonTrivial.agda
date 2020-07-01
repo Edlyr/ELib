@@ -8,22 +8,17 @@ open import Cubical.Structures.Group renaming (⟨_⟩ to Grp⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩)
 open import Cubical.Data.Sigma
 open import Cubical.Functions.Embedding
-open import Cubical.Functions.Surjection
-open import Cubical.Foundations.SIP
-open import Cubical.Foundations.Equiv.HalfAdjoint
 open import Cubical.HITs.SetTruncation renaming (rec to recSetTrunc ; elim to elimSetTrunc)
 open import Cubical.HITs.GroupoidTruncation renaming (rec to recGrpdTrunc ; elim to elimGrpdTrunc)
 
 open import Cubical.HITs.S1 renaming (base to base₁)
 open import Cubical.HITs.S2 renaming (base to base₂)
 open import Cubical.HITs.S3 renaming (base to base₃)
-open import Cubical.HITs.Susp
 open import Cubical.Data.Nat using (suc)
 open import Cubical.Data.Int
 open import Cubical.Data.Empty
 open import Cubical.Data.Unit
 
---open import ELib.UsefulLemmas
 open import ELib.Gerbe.Base
 open import ELib.Gerbe.Link
 open import ELib.Gerbe.B2
