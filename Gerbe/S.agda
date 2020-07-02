@@ -2,7 +2,15 @@
 
 module ELib.Gerbe.S where
 
-open import Cubical.Foundations.Everything
+open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.Path
+open import Cubical.Foundations.GroupoidLaws
+open import Cubical.Foundations.HLevels
+open import Cubical.Foundations.Function
+open import Cubical.Foundations.Pointed
+open import Cubical.Foundations.Isomorphism
+
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ; elim to elimPropTrunc)
 open import Cubical.Data.Sigma
 open import Cubical.Structures.Group hiding (⟨_⟩)
