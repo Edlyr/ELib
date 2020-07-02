@@ -79,6 +79,9 @@ isSetGroupEquiv {A = A} {B = B} = isOfHLevelRespectEquiv 2 (invEquiv lemma) (isS
   lemma = isoToEquiv (iso (λ (groupequiv eq hom) → fst eq , snd eq , hom) (λ (f , eq , hom) → groupequiv (f , eq) hom)
     (λ _ → refl) λ _ → refl)
 
+idGroupHom : {A : Group {ℓ}} → GroupHom A A
+idGroupHom = grouphom (λ x → x) (λ _ _ → refl)
+
 isPropIsLink : {G : Gerbe {ℓ}} {A : AbGroup {ℓ}} {e : _} → isProp (IsLink G A e)
 isPropIsLink {G = G} {A = A} {e = e} = isOfHLevelRespectEquiv 1 lemma (isProp× (isPropΠ λ _ → isPropIsEquiv _)
   (isPropΠ λ x → isPropIsGroupHom (AbGroup→Group (π G x)) (AbGroup→Group A))) where
@@ -198,14 +201,14 @@ module B²ΣTheory (A : AbGroup {ℓ}) where
 module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) where
   open B²
   type : B² A → Type _
-  type G = Σ[ H ∈ B² B ] Σ[ g ∈ (B².Carrier G → B².Carrier H) ] congLink (B².lnk G) (B².lnk H) g ≡ f
+  type G = Σ[ H ∈ B² B ] Σ[ g ∈ (Carrier G → Carrier H) ] congLink (B².lnk G) (B².lnk H) g ≡ f
 
   isPropType : (G : B² A) → isProp (type G)
-  isPropType G = recPropTrunc isPropIsProp lemma (B².inhabited G) where
+  isPropType G = recPropTrunc isPropIsProp lemma (inhabited G) where
     module G = B² G
     lG = G.lnk
     lemma : (x : G.Carrier) → isProp (type G)
-    lemma x (H1 , g1 , !1) (H2 , g2 , !2) = ΣPathP (test , toPathP (Σ≡Prop (λ _ → isSetGroupHom _ _) (cong fst testg1≡testg2))) where
+    lemma x (H1 , g1 , !1) (H2 , g2 , !2) = ΣPathP (path-H , ΣPathP ((λ i → fst (path-g i)) , toPathP (isSetGroupHom _ _ _ _))) where
       module H1 = B² H1
       module H2 = B² H2
       h1 = g1 x
@@ -214,58 +217,30 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       l2 = H2.lnk
 
       open B²ΣTheory B
-      del : _
-      del = deloopType l1 l2 (grouphom (λ x → x) (λ _ _ → refl)) h1 h2
-      unique : isContr del
-      unique = deloopUnique l1 l2 (grouphom (λ x → x) (λ _ _ → refl)) h1 h2
+      H→ : Σ[ j ∈ (H1.Carrier → H2.Carrier) ] (h2 ≡ j h1) × (congLink l1 l2 j ≡ idGroupHom)
+      H→ = deloopUnique l1 l2 idGroupHom h1 h2 .fst
 
-      pre-test : B²Equiv B H1 H2
-      pre-test = b²equiv (fst unique .fst) (fst unique .snd .snd)
-      test : H1 ≡ H2
-      test = uaB² pre-test
+      equiv : B²Equiv B H1 H2
+      equiv = b²equiv (H→ .fst) (H→ .snd .snd)
+      module equiv = B²Equiv equiv
 
-      testg2 : deloopType lG l2 f x h2
-      testg2 = g2 , refl , !2
+      path-H : H1 ≡ H2
+      path-H = uaB² equiv
 
-      testg1 : deloopType lG l2 f x h2
-      testg1 = transport (λ i → G.Carrier → B².Carrier (test i)) g1 , pointed , funeq where
-        pointed : h2 ≡ transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 x
-        pointed =
-          h2
-            ≡⟨ fst unique .snd .fst ⟩
-          fst (fst unique) h1
-            ≡⟨ sym (uaβ (B²Equiv.eq pre-test) h1) ⟩
-          transport (ua (B²Equiv.eq pre-test)) h1
-            ≡⟨ sym (cong (λ r → transport r h1) (carac-uaB² pre-test)) ⟩
-          transport (λ i → Gerbe.Carrier (grb (test i))) h1
-            ≡⟨ (λ i → transport→R _ G.Carrier _ _ _ test g1 (~ i) x) ⟩
-          transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 x ∎
+      isDeloop-g1 : deloopType lG l1 f x h1
+      isDeloop-g1 = g1 , refl , !1
+      isDeloop-g2 : deloopType lG l2 f x h2
+      isDeloop-g2 = g2 , refl , !2
 
-        funeq : congLink lG l2 (transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1) ≡ f
-        funeq =
-          congLink lG l2 (transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1)
-            ≡⟨ cong (congLink lG l2) subLemma ⟩
-          congLink lG l2 (B²Equiv.fun pre-test ∘ g1)
-            ≡⟨ congLink-comp lG l1 l2 g1 (B²Equiv.fun pre-test) ⟩
-          compGroupHom (congLink lG l1 g1) (congLink l1 l2 (B²Equiv.fun pre-test))
-            ≡⟨ cong (compGroupHom (congLink lG l1 g1)) (B²Equiv.p pre-test) ⟩
-          compGroupHom (congLink lG l1 g1) (grouphom (λ x → x) (λ _ _ → refl))
-            ≡⟨ cong (λ r → compGroupHom r (grouphom (λ x → x) (λ _ _ → refl))) !1 ⟩
-          compGroupHom f (grouphom (λ x → x) (λ _ _ → refl))
-            ≡⟨ groupHomEq refl ⟩
-          f ∎ where
-          subLemma : transport (λ i → G.Carrier → Gerbe.Carrier (grb (test i))) g1 ≡ B²Equiv.fun pre-test ∘ g1
-          subLemma = 
-            _
-              ≡⟨ transport→R _ G.Carrier _ H1 H2 test g1 ⟩
-            (λ a → transport (λ i → Gerbe.Carrier (grb (test i))) (g1 a))
-              ≡⟨ (λ i a → transport (carac-uaB² pre-test i) (g1 a)) ⟩
-            (λ a → transport (ua (B²Equiv.eq pre-test)) (g1 a))
-              ≡⟨ funExt (λ a → uaβ (B²Equiv.eq pre-test) (g1 a)) ⟩
-            B²Equiv.fun pre-test ∘ g1 ∎
-          
-      testg1≡testg2 : testg1 ≡ testg2
-      testg1≡testg2 = isContr→isProp (deloopUnique lG l2 f x h2) _ _
+      pointed : PathP (λ i → B².Carrier (path-H i)) h1 h2
+      pointed = toPathP (
+        transport (cong Carrier path-H) h1 ≡⟨ (λ i → transport (carac-uaB² equiv i) h1) ⟩
+        transport (ua equiv.eq) h1         ≡⟨ uaβ equiv.eq h1 ⟩
+        equiv.fun h1                       ≡⟨ sym (H→ .snd .fst) ⟩
+        h2 ∎)
+
+      path-g : PathP (λ i → deloopType lG (B².lnk (path-H i)) f x (pointed i)) isDeloop-g1 isDeloop-g2
+      path-g = toPathP (isContr→isProp (deloopUnique lG l2 f x h2) _ _)
 
   2-deloop-def : (G : B² A) → type G
   2-deloop-def G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
@@ -276,7 +251,7 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
     module H = B² H
     lemma : B².Carrier G → type G
     lemma x = H , fst deloop , snd (snd deloop) where
-      deloop : deloopType G.lnk H.lnk f x h 
+      deloop : deloopType G.lnk H.lnk f x h
       deloop = deloopUnique _ _ _ _ _ .fst
 
   2-deloop : B² A → B² B
