@@ -195,8 +195,9 @@ module B²ΣTheory (A : AbGroup {ℓ}) where
   uaB² = equivFun (B²Path _ _)
 
   carac-uaB² : {X Y : B² A} → (f : B²Equiv A X Y) → (cong B².Carrier (uaB² f)) ≡ ua (B²Equiv.eq f)
-  carac-uaB² e = (refl ∙∙ ua eq ∙∙ refl) ≡⟨ sym (rUnit _) ⟩ ua eq ∎ where
-    open B²Equiv e
+  carac-uaB² e = (refl ∙∙ ua eq ∙∙ refl) ≡⟨ sym (rUnit _) ⟩ ua eq ∎ where open B²Equiv e
+
+open B²ΣTheory using (B²Path ; uaB² ; carac-uaB²) public
 
 module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) where
   open B²
@@ -216,7 +217,6 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       l1 = H1.lnk
       l2 = H2.lnk
 
-      open B²ΣTheory B
       H→ : Σ[ j ∈ (H1.Carrier → H2.Carrier) ] (h2 ≡ j h1) × (congLink l1 l2 j ≡ idGroupHom)
       H→ = deloopUnique l1 l2 idGroupHom h1 h2 .fst
 
@@ -225,7 +225,7 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       module equiv = B²Equiv equiv
 
       path-H : H1 ≡ H2
-      path-H = uaB² equiv
+      path-H = uaB² B equiv
 
       isDeloop-g1 : deloopType lG l1 f x h1
       isDeloop-g1 = g1 , refl , !1
@@ -234,7 +234,7 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
 
       pointed : PathP (λ i → B².Carrier (path-H i)) h1 h2
       pointed = toPathP (
-        transport (cong Carrier path-H) h1 ≡⟨ (λ i → transport (carac-uaB² equiv i) h1) ⟩
+        transport (cong Carrier path-H) h1 ≡⟨ (λ i → transport (carac-uaB² B equiv i) h1) ⟩
         transport (ua equiv.eq) h1         ≡⟨ uaβ equiv.eq h1 ⟩
         equiv.fun h1                       ≡⟨ sym (H→ .snd .fst) ⟩
         h2 ∎)
