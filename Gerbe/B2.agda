@@ -20,17 +20,17 @@ private
   variable
     ℓ ℓ' : Level
 
-module _ (A : AbGroup {ℓ}) where
-  record B² : Type (ℓ-suc ℓ) where
+module _ (A : AbGroup {ℓ}) {ℓ' : Level} where
+  record B² : Type (ℓ-max ℓ (ℓ-suc ℓ')) where
     constructor b²
     field
-      grb : Gerbe {ℓ}
+      grb : Gerbe {ℓ'}
       lnk : Link grb A
 
     open Gerbe grb public
     open Link lnk public
 
-  record B²Equiv (G H : B²) : Type ℓ where
+  record B²Equiv (G H : B²) : Type (ℓ-max ℓ' ℓ) where
     constructor b²equiv
     module G = B² G
     module H = B² H
@@ -82,32 +82,32 @@ isSetGroupEquiv {A = A} {B = B} = isOfHLevelRespectEquiv 2 (invEquiv lemma) (isS
 idGroupHom : {A : Group {ℓ}} → GroupHom A A
 idGroupHom = grouphom (λ x → x) (λ _ _ → refl)
 
-isPropIsLink : {G : Gerbe {ℓ}} {A : AbGroup {ℓ}} {e : _} → isProp (IsLink G A e)
+isPropIsLink : {G : Gerbe {ℓ'}} {A : AbGroup {ℓ}} {e : _} → isProp (IsLink G A e)
 isPropIsLink {G = G} {A = A} {e = e} = isOfHLevelRespectEquiv 1 lemma (isProp× (isPropΠ λ _ → isPropIsEquiv _)
   (isPropΠ λ x → isPropIsGroupHom (AbGroup→Group (π G x)) (AbGroup→Group A))) where
   lemma : (((x : _) → isEquiv (e x)) × ((x : _) → isGroupHom (AbGroup→Group (π G x)) (AbGroup→Group A) (e x))) ≃ IsLink G A e
   lemma = isoToEquiv (iso (λ (a , b) → islink a b) (λ (islink a b) → a , b) (λ _ → refl) λ _ → refl)
 
-isSetLink : {G : Gerbe {ℓ}} {A : AbGroup {ℓ}} → isSet (Link G A)
+isSetLink : {G : Gerbe {ℓ'}} {A : AbGroup {ℓ}} → isSet (Link G A)
 isSetLink {G = G} {A = A} = isOfHLevelRespectEquiv 2 (invEquiv lemma) (isSetΠ λ _ → isSetGroupEquiv) where
   lemma : Link G A ≃ ((x : ⟨ G ⟩) → AbGroupEquiv (π G x) A)
   lemma = isoToEquiv (iso (λ l x → Link.group-equiv l x) (λ l → link (λ x → GroupEquiv.eq (l x) .fst)
     (islink (λ x → GroupEquiv.eq (l x) .snd) λ x → GroupEquiv.isHom (l x))) (λ _ → refl) λ _ → refl)
 
-linkEq : {G : Gerbe {ℓ}} {A : AbGroup {ℓ}} {l1 l2 : Link G A} → (Link.e l1 ≡ Link.e l2) → l1 ≡ l2
+linkEq : {G : Gerbe {ℓ'}} {A : AbGroup {ℓ}} {l1 l2 : Link G A} → (Link.e l1 ≡ Link.e l2) → l1 ≡ l2
 linkEq {G = G} {A = A} {l1 = l1} {l2 = l2} p i = link (p i) (lemma i) where
   lemma : PathP (λ i → IsLink G A (p i)) (Link.isLink l1) (Link.isLink l2)
   lemma = toPathP (isPropIsLink _ _)
 
-module B²ΣTheory (A : AbGroup {ℓ}) where
-  B²Struct : Type ℓ → Type ℓ
+module B²ΣTheory (A : AbGroup {ℓ}) {ℓ' : Level} where
+  B²Struct : Type ℓ' → Type (ℓ-max ℓ ℓ')
   B²Struct X = Σ[ isGerbe ∈ IsGerbe X ] Link (gerbe X isGerbe) A
 
-  isSetB²Struct : {X : Type ℓ} → isSet (B²Struct X)
-  isSetB²Struct {X = X} = isSetΣ (isProp→isSet isPropIsGerbe) (λ _ → isSetLink)
+  isSetB²Struct : {X : Type ℓ'} → isSet (B²Struct X)
+  isSetB²Struct {X = X} = isSetΣ (isProp→isSet isPropIsGerbe) λ _ → isSetLink
 
-  B²Σ : Type (ℓ-suc ℓ)
-  B²Σ = TypeWithStr ℓ B²Struct
+  B²Σ : Type (ℓ-max ℓ (ℓ-suc ℓ'))
+  B²Σ = TypeWithStr ℓ' B²Struct
 
   B²EquivStr : StrEquiv B²Struct ℓ
   B²EquivStr (X , grb , lnk) (X' , grb' , lnk') (f , eq) = congLink lnk lnk' f ≡ grouphom (λ x → x) (λ _ _ → refl)
@@ -199,10 +199,10 @@ module B²ΣTheory (A : AbGroup {ℓ}) where
 
 open B²ΣTheory using (B²Path ; uaB² ; carac-uaB²) public
 
-module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) where
+module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) {ℓG ℓH : Level}  where
   open B²
-  type : B² A → Type _
-  type G = Σ[ H ∈ B² B ] Σ[ g ∈ (Carrier G → Carrier H) ] congLink (B².lnk G) (B².lnk H) g ≡ f
+  type : B² A {ℓG} → Type _
+  type G = Σ[ H ∈ B² B {ℓH} ] Σ[ g ∈ (Carrier G → Carrier H) ] congLink (B².lnk G) (B².lnk H) g ≡ f
 
   isPropType : (G : B² A) → isProp (type G)
   isPropType G = recPropTrunc isPropIsProp lemma (inhabited G) where
@@ -242,11 +242,10 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       path-g : PathP (λ i → deloopType lG (B².lnk (path-H i)) f x (pointed i)) isDeloop-g1 isDeloop-g2
       path-g = toPathP (isContr→isProp (deloopUnique lG l2 f x h2) _ _)
 
-  2-deloop-def : (G : B² A) → type G
-  2-deloop-def G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
-    postulate
-      H : B² B -- H can be replaced by the gerbe of B-torsors
-      h : B².Carrier H -- and h can be replaced by the principal B-torsor
+  -- Any pointed gerbe in B² B gives rise to a definition of 2-delooping
+  -- If ℓH is (ℓ-suc ℓ'), then the Gerbe of B-torsors will do
+  2-deloop-def : (H : B² B) (h : B².Carrier H) (G : B² A) → type G
+  2-deloop-def H h G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
     module G = B² G
     module H = B² H
     lemma : B².Carrier G → type G
@@ -254,8 +253,8 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) whe
       deloop : deloopType G.lnk H.lnk f x h
       deloop = deloopUnique _ _ _ _ _ .fst
 
-  2-deloop : B² A → B² B
-  2-deloop = fst ∘ 2-deloop-def
+  2-deloop : (H : B² B) → B².Carrier H → B² A → B² B
+  2-deloop H h = fst ∘ 2-deloop-def H h
 
 {-
 GRP = AbGroup→Group
