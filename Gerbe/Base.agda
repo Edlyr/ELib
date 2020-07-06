@@ -12,7 +12,7 @@ open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩ ; AbGroup�
 
 private
   variable
-    ℓ : Level
+    ℓ ℓ' : Level
 
 record IsGerbe (X : Type ℓ) : Type ℓ where
   constructor isgerbe
@@ -50,3 +50,30 @@ gerbeEq {G = G} {H = H} p i = gerbe (p i) (grb i) where
 
 π : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → AbGroup {ℓ}
 π G x = makeAbGroup (refl {x = x}) _∙_ sym (Gerbe.grpd G _ _) assoc (λ x → sym (rUnit x)) rCancel (Gerbe.comm G x)
+
+
+open import Cubical.Data.Sigma
+GerbeProduct : Gerbe {ℓ} → Gerbe {ℓ'} → Gerbe
+GerbeProduct G H = gerbe X (isgerbe inhabited grpd conn comm) where
+  module G = Gerbe G
+  module H = Gerbe H
+  X = G.Carrier × H.Carrier
+  abstract
+    inhabited : ∥ X ∥
+    inhabited = recPropTrunc propTruncIsProp (λ g → recPropTrunc propTruncIsProp (λ h → ∣ g , h ∣) H.inhabited) G.inhabited
+    grpd : isGroupoid X
+    grpd = isOfHLevel× 3 G.grpd H.grpd
+    conn : (x x' : X) → ∥ x ≡ x' ∥
+    conn (x , y) (x' , y') = recPropTrunc propTruncIsProp (λ px → recPropTrunc propTruncIsProp
+      (λ py → ∣ ΣPathP (px , py) ∣) (H.conn y y')) (G.conn x x')
+
+    comm : (x : X) (p q : x ≡ x) → p ∙ q ≡ q ∙ p
+    comm x p q =
+      p ∙ q ≡⟨ refl ⟩
+      ΣPathP (cong fst (p ∙ q) , cong snd (p ∙ q)) ≡⟨ (λ i → ΣPathP (lemma-fst i , lemma-snd i)) ⟩
+      ΣPathP (cong fst (q ∙ p) , cong snd (q ∙ p)) ≡⟨ refl ⟩
+      q ∙ p ∎ where
+      lemma-fst : cong fst (p ∙ q) ≡ cong fst (q ∙ p)
+      lemma-fst = cong-∙ fst p q ∙ G.comm _ _ _ ∙ sym (cong-∙ fst q p)
+      lemma-snd : cong snd (p ∙ q) ≡ cong snd (q ∙ p)
+      lemma-snd = cong-∙ snd p q ∙ H.comm _ _ _ ∙ sym (cong-∙ snd q p)
