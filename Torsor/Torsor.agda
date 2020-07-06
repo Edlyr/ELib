@@ -24,7 +24,7 @@ private
   variable
     ℓ ℓ' : Level
 
-record IsTorsor (G : Group {ℓ}) (X : Type ℓ) (_⋆_ : X → ⟨ G ⟩ → X) : Type ℓ where
+record IsTorsor (G : Group {ℓ}) (X : Type ℓ') (_⋆_ : X → ⟨ G ⟩ → X) : Type (ℓ-max ℓ ℓ') where
   constructor istorsor
   private
     module G = Group G
@@ -37,17 +37,17 @@ record IsTorsor (G : Group {ℓ}) (X : Type ℓ) (_⋆_ : X → ⟨ G ⟩ → X)
     trans-eq : (x y : X) → x ⋆ trans x y ≡ y
     trans-unique : (x y : X) (g : ⟨ G ⟩) → x ⋆ g ≡ y → trans x y ≡ g
 
-record Torsor (G : Group {ℓ}) : Type (ℓ-suc ℓ) where
+record Torsor (G : Group {ℓ}) {ℓ' : Level} : Type (ℓ-max ℓ (ℓ-suc ℓ')) where
   constructor torsor
   module G = Group G
   field
-    Carrier : Type ℓ
+    Carrier : Type ℓ'
     _⋆_ : Carrier → ⟨ G ⟩ → Carrier
     isTorsor : IsTorsor G Carrier _⋆_
 
   open IsTorsor isTorsor public
 
-record TorsorEquiv {G : Group {ℓ}} (T T' : Torsor G) : Type (ℓ-suc ℓ) where
+record TorsorEquiv {G : Group {ℓ}} {ℓT ℓT' : Level} (T : Torsor G {ℓT}) (T' : Torsor G {ℓT'}) : Type (ℓ-max ℓ (ℓ-max ℓT ℓT')) where
   constructor t-equiv
   module T = Torsor T
   module T' = Torsor T'
@@ -55,11 +55,12 @@ record TorsorEquiv {G : Group {ℓ}} (T T' : Torsor G) : Type (ℓ-suc ℓ) wher
     eq : T.Carrier ≃ T'.Carrier
     hom : (x : T.Carrier) (g : ⟨ G ⟩) → equivFun eq (x T.⋆ g) ≡ (equivFun eq x T'.⋆ g)
 
-compTorsorEquiv : {G : Group {ℓ}} {T T' T'' : Torsor G} → TorsorEquiv T T' → TorsorEquiv T' T'' → TorsorEquiv T T''
+compTorsorEquiv : {G : Group {ℓ}} {ℓT ℓT' ℓT'' : Level} {T : Torsor G {ℓT}} {T' : Torsor G {ℓT'}} {T'' : Torsor G {ℓT''}} →
+  TorsorEquiv T T' → TorsorEquiv T' T'' → TorsorEquiv T T''
 compTorsorEquiv {G = G} {T = T} {T' = T'} {T'' = T''} (t-equiv (f , eqf) homf) (t-equiv (g , eqg) homg) =
   t-equiv (compEquiv (f , eqf) (g , eqg)) (λ x h → cong g (homf _ _) ∙ homg _ _)
 
-invTorsorEquiv : {G : Group {ℓ}} {T T' : Torsor G} → TorsorEquiv T T' → TorsorEquiv T' T
+invTorsorEquiv : {G : Group {ℓ}} {ℓT ℓT' : Level} {T : Torsor G {ℓT}} {T' : Torsor G {ℓT'}} → TorsorEquiv T T' → TorsorEquiv T' T
 invTorsorEquiv {G = G} {T = T} {T' = T'} (t-equiv f hom) = t-equiv (invEquiv f) lemma where
   _⋆¹_ = Torsor._⋆_ T
   _⋆²_ = Torsor._⋆_ T'
@@ -72,13 +73,13 @@ invTorsorEquiv {G = G} {T = T} {T' = T'} (t-equiv f hom) = t-equiv (invEquiv f) 
     fst f (invEq f x) ⋆² g   ≡⟨ sym (hom _ _) ⟩
     fst f (invEq f x ⋆¹ g) ∎)
 
-torsorEquivEq : {G : Group {ℓ}} {T T' : Torsor G} (f g : TorsorEquiv T T') → TorsorEquiv.eq f ≡ TorsorEquiv.eq g → f ≡ g
+torsorEquivEq : {G : Group {ℓ}} {ℓT ℓT' : Level} {T : Torsor G {ℓT}} {T' : Torsor G {ℓT'}} (f g : TorsorEquiv T T') → TorsorEquiv.eq f ≡ TorsorEquiv.eq g → f ≡ g
 torsorEquivEq {G = G} {T = T} {T' = T'} f g p i = t-equiv (p i) (lemma i) where
   open Torsor
   lemma : PathP (λ i → (x : Carrier T) (g : ⟨ G ⟩) → equivFun (p i) ((T ⋆ x) g) ≡ (T' ⋆ equivFun (p i) x) g) (TorsorEquiv.hom f) (TorsorEquiv.hom g)
   lemma = toPathP ((isPropΠ2 λ _ _ → is-set T' _ _) _ _)
 
-isPropIsTorsor : {G : Group {ℓ}} {X : Type ℓ} {_⋆_ : X → ⟨ G ⟩ → X} → isProp (IsTorsor G X _⋆_)
+isPropIsTorsor : {G : Group {ℓ}} {X : Type ℓ'} {_⋆_ : X → ⟨ G ⟩ → X} → isProp (IsTorsor G X _⋆_)
 isPropIsTorsor {G = G} {X = X} {_⋆_ = _⋆_} = isOfHLevelRespectEquiv 1 equiv isPropType where
   module G = Group G
   type : Type _
@@ -105,7 +106,7 @@ isPropIsTorsor {G = G} {X = X} {_⋆_ = _⋆_} = isOfHLevelRespectEquiv 1 equiv 
     (λ (istorsor is-set inhabited assoc neutral trans trans-eq trans-unique) → is-set , inhabited , assoc , neutral , trans , trans-eq , trans-unique)
     (λ _ → refl) λ _ → refl)
 
-torsorEq : {G : Group {ℓ}} {T1 T2 : Torsor G} (p : Torsor.Carrier T1 ≡ Torsor.Carrier T2) →
+torsorEq : {G : Group {ℓ}} {T1 T2 : Torsor G {ℓ'}} (p : Torsor.Carrier T1 ≡ Torsor.Carrier T2) →
   PathP (λ i → p i → ⟨ G ⟩ → p i) (Torsor._⋆_ T1) (Torsor._⋆_ T2) → T1 ≡ T2
 torsorEq {G = G} {T1 = T1} {T2 = T2} p q i = torsor (p i) (q i) (lemma i) where
   open Torsor
@@ -118,7 +119,7 @@ principalTorsor G = torsor ⟨ G ⟩ _+_ (istorsor is-set ∣ 0g ∣ (λ x y z �
   λ x y g p → sym (sym (lid g) ∙ cong (_+ g) (sym (invl x)) ∙ sym (assoc _ _ _) ∙ cong (- x +_) p))
   where open Group G
 
-trivialize : {G : Group {ℓ}} (T : Torsor G) (t₀ : Torsor.Carrier T) → TorsorEquiv (principalTorsor G) T
+trivialize : {G : Group {ℓ}} {ℓT : Level} (T : Torsor G {ℓT}) (t₀ : Torsor.Carrier T) → TorsorEquiv (principalTorsor G) T
 trivialize {G = G} T t₀ = t-equiv (isoToEquiv (iso f g sec retr)) lemma where
   module T = Torsor T
   module P = Torsor (principalTorsor G)
@@ -139,12 +140,12 @@ trivialize {G = G} T t₀ = t-equiv (isoToEquiv (iso f g sec retr)) lemma where
   lemma g g' = sym (T.assoc _ _ _)
   
 
-module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) where
+module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) {ℓ' : Level} where
   open Group G
-  RawRActionStruct : Type ℓ → Type _
+  RawRActionStruct : Type ℓ' → Type _
   RawRActionStruct X = X → ⟨ G ⟩ → X
 
-  TorsorAxioms : (X : Type ℓ) → (X → ⟨ G ⟩ → X) → Type ℓ
+  TorsorAxioms : (X : Type ℓ') → (X → ⟨ G ⟩ → X) → Type _
   TorsorAxioms X _⋆_ =
     isSet X ×
     ∥ X ∥ ×
@@ -152,14 +153,14 @@ module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) where
     ((x : X) → x ⋆ 0g ≡ x) ×
     ((x y : X) → isContr (Σ[ g ∈ ⟨ G ⟩ ] x ⋆ g ≡ y))
 
-  isPropTorsorAxioms : (X : Type ℓ) (s : X → ⟨ G ⟩ → X) → isProp (TorsorAxioms X s)
+  isPropTorsorAxioms : (X : Type ℓ') (s : X → ⟨ G ⟩ → X) → isProp (TorsorAxioms X s)
   isPropTorsorAxioms X _⋆_ = isPropΣ isPropIsSet (λ set → isProp×
     propTruncIsProp (isProp×
     (isPropΠ λ _ → isPropΠ2 λ _ _ → set _ _) (isProp×
     (isPropΠ λ _ → set _ _)
     (isPropΠ2 λ _ _ → isPropIsContr))))
 
-  TorsorStructure : Type ℓ → Type _
+  TorsorStructure : Type ℓ' → Type _
   TorsorStructure = AxiomsStructure RawRActionStruct TorsorAxioms
 
   TorsorEquivStr : StrEquiv TorsorStructure _
@@ -184,12 +185,12 @@ module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) where
     (istorsor is-set inhabited assoc neutral
     (λ x y → contr x y .fst .fst) (λ x y → contr x y .fst .snd) λ x y g p → cong fst (contr x y .snd (g , p)))
 
-  TorsorIsoTorsorΣ : Iso (Torsor G) TorsorΣ
+  TorsorIsoTorsorΣ : Iso (Torsor G {ℓ'}) TorsorΣ
   TorsorIsoTorsorΣ = iso Torsor→TorsorΣ TorsorΣ→Torsor
     (λ _ → ΣPathP (refl , Σ≡Prop (isPropTorsorAxioms _) refl))
     (λ _ → torsorEq refl refl)
 
-  TorsorEquivΣ : (T T' : Torsor G) → Type ℓ
+  TorsorEquivΣ : (T T' : Torsor G) → Type _
   TorsorEquivΣ T T' = Torsor→TorsorΣ T ≃[ TorsorEquivStr ] Torsor→TorsorΣ T'
 
   TorsorIsoΣPath : {T T' : Torsor G} → Iso (TorsorEquiv T T') (TorsorEquivΣ T T')
@@ -206,19 +207,19 @@ module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) where
     T ≡ T' ■
 
 abstract
-  TorsorPath : {G : Group {ℓ}} (T T' : Torsor G) → TorsorEquiv T T' ≃ (T ≡ T')
+  TorsorPath : {G : Group {ℓ}} (T T' : Torsor G {ℓ'}) → TorsorEquiv T T' ≃ (T ≡ T')
   TorsorPath = TorsorΣTheory.TorsorPath _
 
-  carac-uaTorsor : {G : Group {ℓ}} {T T' : Torsor G} (f : TorsorEquiv T T') → cong Torsor.Carrier (fst (TorsorPath T T') f) ≡ ua (TorsorEquiv.eq f)
+  carac-uaTorsor : {G : Group {ℓ}} {T T' : Torsor G {ℓ'}} (f : TorsorEquiv T T') → cong Torsor.Carrier (fst (TorsorPath T T') f) ≡ ua (TorsorEquiv.eq f)
   carac-uaTorsor (t-equiv f m) = refl ∙∙ ua f ∙∙ refl ≡⟨ sym (rUnit (ua f)) ⟩ ua f ∎
 
-uaTorsor : {G : Group {ℓ}} {T T' : Torsor G} → TorsorEquiv T T' → T ≡ T'
+uaTorsor : {G : Group {ℓ}} {T T' : Torsor G {ℓ'}} → TorsorEquiv T T' → T ≡ T'
 uaTorsor = equivFun (TorsorPath _ _)
 
-pathToTorsorEquiv : {G : Group {ℓ}} {T T' : Torsor G} → T ≡ T' → TorsorEquiv T T'
+pathToTorsorEquiv : {G : Group {ℓ}} {T T' : Torsor G {ℓ'}} → T ≡ T' → TorsorEquiv T T'
 pathToTorsorEquiv = invEq (TorsorPath _ _)
 
-carac-pathToTorsorEquiv : {G : Group {ℓ}} {T T' : Torsor G} (p : T ≡ T') → pathToEquiv (cong Torsor.Carrier p) ≡ TorsorEquiv.eq (pathToTorsorEquiv p)
+carac-pathToTorsorEquiv : {G : Group {ℓ}} {T T' : Torsor G {ℓ'}} (p : T ≡ T') → pathToEquiv (cong Torsor.Carrier p) ≡ TorsorEquiv.eq (pathToTorsorEquiv p)
 carac-pathToTorsorEquiv {T = T} {T' = T'} p = ua-inj _ _ (
   ua (pathToEquiv (cong Carrier p))             ≡⟨ ua-pathToEquiv _ ⟩
   cong Carrier p                                ≡⟨ cong (cong Carrier) (sym (retEq (TorsorPath T T') p)) ⟩
@@ -228,7 +229,7 @@ carac-pathToTorsorEquiv {T = T} {T' = T'} p = ua-inj _ _ (
   ua-inj : (a b : _) → ua a ≡ ua b → a ≡ b
   ua-inj a b p = a ≡⟨ sym (pathToEquiv-ua a) ⟩ pathToEquiv (ua a) ≡⟨ cong pathToEquiv p ⟩ pathToEquiv (ua b) ≡⟨ pathToEquiv-ua b ⟩ b ∎
 
-isGroupoidTorsor : {G : Group {ℓ}} → isGroupoid (Torsor G)
+isGroupoidTorsor : {G : Group {ℓ}} → isGroupoid (Torsor G {ℓ'})
 isGroupoidTorsor {G = G} = isOfHLevelRespectEquiv 3 (isoToEquiv (invIso TorsorIsoTorsorΣ)) lemma where
   open TorsorΣTheory G
   is-set : (T : TorsorΣ) → isSet (fst T)
