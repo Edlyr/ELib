@@ -18,7 +18,7 @@ open import ELib.Gerbe.Link
 
 private
   variable
-    ℓ ℓ' : Level
+    ℓ ℓ' ℓ'' : Level
 
 module _ (A : AbGroup {ℓ}) {ℓ' : Level} where
   record B² : Type (ℓ-max ℓ (ℓ-suc ℓ')) where
@@ -204,57 +204,89 @@ module Deloop2 (A : AbGroup {ℓ}) (B : AbGroup {ℓ'}) (f : AbGroupHom A B) {�
   type : B² A {ℓG} → Type _
   type G = Σ[ H ∈ B² B {ℓH} ] Σ[ g ∈ (Carrier G → Carrier H) ] congLink (B².lnk G) (B².lnk H) g ≡ f
 
-  isPropType : (G : B² A) → isProp (type G)
-  isPropType G = recPropTrunc isPropIsProp lemma (inhabited G) where
-    module G = B² G
-    lG = G.lnk
-    lemma : (x : G.Carrier) → isProp (type G)
-    lemma x (H1 , g1 , !1) (H2 , g2 , !2) = ΣPathP (path-H , ΣPathP ((λ i → fst (path-g i)) , toPathP (isSetGroupHom _ _ _ _))) where
-      module H1 = B² H1
-      module H2 = B² H2
-      h1 = g1 x
-      h2 = g2 x
-      l1 = H1.lnk
-      l2 = H2.lnk
+  abstract
+    isPropType : (G : B² A) → isProp (type G)
+    isPropType G = recPropTrunc isPropIsProp lemma (inhabited G) where
+      module G = B² G
+      lG = G.lnk
+      lemma : (x : G.Carrier) → isProp (type G)
+      lemma x (H1 , g1 , !1) (H2 , g2 , !2) = ΣPathP (path-H , ΣPathP ((λ i → fst (path-g i)) , toPathP (isSetGroupHom _ _ _ _))) where
+        module H1 = B² H1
+        module H2 = B² H2
+        h1 = g1 x
+        h2 = g2 x
+        l1 = H1.lnk
+        l2 = H2.lnk
 
-      H→ : Σ[ j ∈ (H1.Carrier → H2.Carrier) ] (h2 ≡ j h1) × (congLink l1 l2 j ≡ idGroupHom)
-      H→ = deloopUnique l1 l2 idGroupHom h1 h2 .fst
+        H→ : Σ[ j ∈ (H1.Carrier → H2.Carrier) ] (h2 ≡ j h1) × (congLink l1 l2 j ≡ idGroupHom)
+        H→ = deloopUnique l1 l2 idGroupHom h1 h2 .fst
 
-      equiv : B²Equiv B H1 H2
-      equiv = b²equiv (H→ .fst) (H→ .snd .snd)
-      module equiv = B²Equiv equiv
+        equiv : B²Equiv B H1 H2
+        equiv = b²equiv (H→ .fst) (H→ .snd .snd)
+        module equiv = B²Equiv equiv
 
-      path-H : H1 ≡ H2
-      path-H = uaB² B equiv
+        path-H : H1 ≡ H2
+        path-H = uaB² B equiv
 
-      isDeloop-g1 : deloopType lG l1 f x h1
-      isDeloop-g1 = g1 , refl , !1
-      isDeloop-g2 : deloopType lG l2 f x h2
-      isDeloop-g2 = g2 , refl , !2
+        isDeloop-g1 : deloopType lG l1 f x h1
+        isDeloop-g1 = g1 , refl , !1
+        isDeloop-g2 : deloopType lG l2 f x h2
+        isDeloop-g2 = g2 , refl , !2
 
-      pointed : PathP (λ i → B².Carrier (path-H i)) h1 h2
-      pointed = toPathP (
-        transport (cong Carrier path-H) h1 ≡⟨ (λ i → transport (carac-uaB² B equiv i) h1) ⟩
-        transport (ua equiv.eq) h1         ≡⟨ uaβ equiv.eq h1 ⟩
-        equiv.fun h1                       ≡⟨ sym (H→ .snd .fst) ⟩
-        h2 ∎)
+        pointed : PathP (λ i → B².Carrier (path-H i)) h1 h2
+        pointed = toPathP (
+          transport (cong Carrier path-H) h1 ≡⟨ (λ i → transport (carac-uaB² B equiv i) h1) ⟩
+          transport (ua equiv.eq) h1         ≡⟨ uaβ equiv.eq h1 ⟩
+          equiv.fun h1                       ≡⟨ sym (H→ .snd .fst) ⟩
+          h2 ∎)
 
-      path-g : PathP (λ i → deloopType lG (B².lnk (path-H i)) f x (pointed i)) isDeloop-g1 isDeloop-g2
-      path-g = toPathP (isContr→isProp (deloopUnique lG l2 f x h2) _ _)
+        path-g : PathP (λ i → deloopType lG (B².lnk (path-H i)) f x (pointed i)) isDeloop-g1 isDeloop-g2
+        path-g = toPathP (isContr→isProp (deloopUnique lG l2 f x h2) _ _)
 
-  -- Any pointed gerbe in B² B gives rise to a definition of 2-delooping
-  -- If ℓH is (ℓ-suc ℓ'), then the Gerbe of B-torsors will do
-  2-deloop-def : (H : B² B) (h : B².Carrier H) (G : B² A) → type G
-  2-deloop-def H h G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
-    module G = B² G
-    module H = B² H
-    lemma : B².Carrier G → type G
-    lemma x = H , fst deloop , snd (snd deloop) where
-      deloop : deloopType G.lnk H.lnk f x h
-      deloop = deloopUnique _ _ _ _ _ .fst
+    -- Any pointed gerbe in B² B gives rise to a definition of 2-delooping
+    -- If ℓH is (ℓ-suc ℓ'), then the Gerbe of B-torsors will do
+    2-deloop-def : (H : B² B {ℓH}) (h : B².Carrier H) (G : B² A) → type G
+    2-deloop-def H h G = recPropTrunc (isPropType G) lemma (B².inhabited G) where
+      module G = B² G
+      module H = B² H
+      lemma : B².Carrier G → type G
+      lemma x = H , fst deloop , snd (snd deloop) where
+        deloop : deloopType G.lnk H.lnk f x h
+        deloop = deloopUnique _ _ _ _ _ .fst
 
   2-deloop : (H : B² B) → B².Carrier H → B² A → B² B
   2-deloop H h = fst ∘ 2-deloop-def H h
+
+module DeloopFunctoriality where
+  2-deloop-id : {A : AbGroup {ℓ}} (H : B² A {ℓ'}) (h : B².Carrier H) → Deloop2.2-deloop A A (grouphom (λ x → x) (λ _ _ → refl)) H h ≡ λ x → x
+  2-deloop-id {A = A} H h = funExt λ G → cong fst (isPropType G (2-deloop-def H h G) (id-deloop G)) where
+    open Deloop2 A A (grouphom (λ x → x) (λ _ _ → refl))
+    id-deloop : (G : B² A {ℓ'}) → type G
+    id-deloop G = G , (λ x → x) , recPropTrunc (isSetGroupHom _ _) (λ x₀ →
+      congLink-carac _ _ _ x₀ ∙ groupHomEq (funExt λ x →
+        B².e G x₀ (invEq (B².eq G x₀) x) ≡⟨ retEq (B².eq G x₀) x ⟩ x ∎
+      )) (B².inhabited G)
+
+  2-deloop-comp : {A : AbGroup {ℓ}} {B : AbGroup {ℓ'}} {C : AbGroup {ℓ''}} {ℓG ℓH ℓF : Level}
+    (H : B² B {ℓH}) (x₀ : B².Carrier H)
+    (F : B² C {ℓF}) (y₀ : B².Carrier F)
+    (f : AbGroupHom A B) (g : AbGroupHom B C) →
+    Deloop2.2-deloop A C (compGroupHom f g) {ℓG = ℓG} F y₀ ≡ Deloop2.2-deloop B C g F y₀ ∘ Deloop2.2-deloop A B f H x₀
+  2-deloop-comp {A = A} {B = B} {C = C} H x₀ F y₀ f g = funExt λ G →
+    cong fst (Deloop2.isPropType A C (compGroupHom f g) G (Deloop2.2-deloop-def A C (compGroupHom f g) F y₀ G) (comp-deloop G))
+    where
+    open Deloop2
+    comp-deloop : (G : B² A) → Deloop2.type A C (compGroupHom f g) G
+    comp-deloop G =
+      (2-deloop B C g F y₀ ∘ 2-deloop A B f H x₀) G ,
+      (λ x → 2-deloop-def B C g F y₀ _ .snd .fst (2-deloop-def A B f H x₀ G .snd .fst x)) ,
+      (congLink (B².lnk G) _ (2-deloop-def B C g F y₀ _ .snd .fst ∘ 2-deloop-def A B f H x₀ G .snd .fst)
+        ≡⟨ congLink-comp _ (B².lnk H') _ (2-deloop-def A B f H x₀ G .snd .fst) (2-deloop-def B C g F y₀ _ .snd .fst) ⟩
+      compGroupHom (congLink _ (B².lnk H') (2-deloop-def A B f H x₀ G .snd .fst)) (congLink (B².lnk H') (B².lnk F') (2-deloop-def B C g F y₀ _ .snd .fst))
+        ≡⟨ (λ i → compGroupHom (2-deloop-def A B f H x₀ G .snd .snd i) (2-deloop-def B C g F y₀ H' .snd .snd i)) ⟩
+      compGroupHom f g ∎) where
+      H' = 2-deloop A B f H x₀ G
+      F' = 2-deloop B C g F y₀ H'
 
 {-
 GRP = AbGroup→Group
