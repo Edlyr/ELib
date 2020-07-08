@@ -7,6 +7,7 @@ open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc ;
 open import Cubical.Structures.Group renaming (⟨_⟩ to Grp⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩ ; AbGroup→Group to GRP)
 open import Cubical.Data.Sigma
+open import Cubical.Data.Unit
 
 open import ELib.Torsor.Torsor
 open import ELib.Gerbe.Base
@@ -41,7 +42,7 @@ module _ (A : AbGroup {ℓ}) where
       transport (cong (λ r → (p q : r ≡ r) → p ∙ q ≡ q ∙ p) path) pre-comm) (pre-conn x)
 
   principalLink : Link PG A
-  principalLink = makeLink-pnt _ (groupequiv eq isHom)
+  principalLink = makeLink-pnt (groupequiv eq isHom)
     where open GroupEquiv (finalLemma (GRP A))
     -- here we can't use finalLemma directly, since even though (π PG PT) has
     -- the same Carrier and law as ΩB, they are not judgmentally equal.
@@ -86,7 +87,7 @@ Hom+ A = grouphom f isHom where
     (a + b) + (c + d) ∎
 
 B²prod : {A : AbGroup {ℓ}} {B : AbGroup {ℓ'}} {ℓG ℓH : Level} → B² A {ℓG} → B² B {ℓH} → B² (A Ab× B)
-B²prod {A = A} {B = B} G H = b² _ lnk where -- Making the argument explicit prevents agda from
+B²prod {A = A} {B = B} G H = b² _ lnk where -- Making the argument explicit would prevent agda from
                                             -- terminating type-checking in any reasonable amount of time
   module G = B² G
   module H = B² H
@@ -116,8 +117,29 @@ B²prod {A = A} {B = B} G H = b² _ lnk where -- Making the argument explicit pr
 
   lnk : Link (GerbeProduct G.grb H.grb) (A Ab× B)
   lnk = link e (islink (λ x → snd (eq x)) e-hom)
-  
-module GerbeAddition (A : AbGroup {ℓ}) where
+
+trivialGroup : AbGroup
+trivialGroup = makeAbGroup tt (λ _ _ → tt) (λ _ → tt)
+  (isProp→isSet (λ {tt tt → refl })) (λ _ _ _ → refl)
+  (λ {tt → refl}) (λ _ → refl) λ _ _ → refl
+
+neutralHom : (G : Group {ℓ}) → GroupHom (GRP trivialGroup) G
+neutralHom G = grouphom (λ _ → Group.0g G) λ _ _ → sym (Group.rid G _)
+
+BtrivialGroup : B² trivialGroup
+BtrivialGroup = b² unitGerbe unitLink where
+  unitGerbe : Gerbe
+  unitGerbe = gerbe Unit (isgerbe ∣ tt ∣ (isSet→isGroupoid (isProp→isSet (λ {tt tt → refl}))) (λ {tt tt → ∣ refl ∣})
+    λ _ _ _ → isProp→isSet (λ {tt tt → refl}) _ _ _ _)
+
+  unitLink : Link unitGerbe trivialGroup
+  unitLink = makeLink-pnt (groupequiv (isoToEquiv (iso (λ _ → tt) (λ _ → refl) (λ {tt → refl}) λ p → isProp→isSet (λ {tt tt → refl}) _ _ _ _))
+    λ _ _ → refl)
+
+trivialB² : isContr (B² trivialGroup)
+trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (groupHomEq (funExt (λ {tt → refl})))))
+
+{-module GerbeAddition (A : AbGroup {ℓ}) where
   K² = B² A {ℓ-suc ℓ}
 
   PA : K²
@@ -130,6 +152,9 @@ module GerbeAddition (A : AbGroup {ℓ}) where
   G ⊹ G' = 2-deloop PA TA (B²prod G G') where
     open Deloop2 (A Ab× A) A (Hom+ A)
 
+  test-neutral : K²
+  test-neutral = {!!}-}
+{-
   module neutral (G : K²) where
     module G = B² G
     module PA = B² PA
@@ -177,4 +202,45 @@ module GerbeAddition (A : AbGroup {ℓ}) where
           f A.0g ∙ invEq (G.eq y) g                         ≡⟨ sym (TorsorEquiv.hom y-eq A.0g g) ⟩
           f (A.0g A.+ g)                                    ≡⟨ cong (λ g → f g) (A.lid g) ⟩
           f g ∎)
-      
+
+    contrT : (x : G.Carrier) (t : PA.Carrier) → isContr (test x t)
+    contrT x t = recPropTrunc isPropIsContr (λ p → subst (λ t → isContr (test x t)) p (contrTA x)) (PA.conn TA t)
+
+    contrT-TA : (x : G.Carrier) → contrT x TA ≡ contrTA x
+    contrT-TA x = isPropIsContr _ _
+
+    mapT : (α : B²prod G PA .B².Carrier) → test (fst α) (snd α)
+    mapT (x , t) = contrT x t .fst
+
+    cong-test : {x : G.Carrier} → (p : (x , TA) ≡ (x , TA)) → PathP (λ i → test (fst (p i)) (snd (p i))) (mapT (x , TA)) (mapT (x , TA))
+    cong-test {x = x} p i = mapT (p i)
+
+    neutralMap : B²prod G PA .B².Carrier → G.Carrier
+    neutralMap (x , t) = contrT x t .fst .fst
+
+    {-coherence : congLink (B².lnk (B²prod G PA)) G.lnk neutralMap ≡ Hom+ A
+    coherence = groupHomEq {!!} where
+      prod : B² (A Ab× A)
+      prod = B²prod G PA
+      module prod = B² prod
+
+      lemma : (x : G.Carrier) → congLink-pnt (B².lnk (B²prod G PA)) G.lnk neutralMap (x , TA) ≡ Hom+ A
+      lemma x = groupHomEq (funExt {!subLemma!}) where
+        x₀ = (x , TA)
+        r₀ : neutralMap x₀ ≡ x
+        r₀ = cong (fst ∘ fst) (contrT-TA x)
+        carac-cong : (p : x ≡ x) (q : TA ≡ TA) → cong {x = x₀} {y = x₀} neutralMap (ΣPathP (p , q)) ≡
+          r₀ ∙ {!!} ∙ sym r₀
+        carac-cong = {!!}
+        {-subLemma : (α : Ab⟨ A Ab× A ⟩) → (G.e (neutralMap x₀) ∘ cong neutralMap ∘ invEq (prod.eq x₀)) α ≡ (fst α A.+ snd α)
+        subLemma (g , g') =
+          G.e (neutralMap x₀) (cong neutralMap (invEq (prod.eq x₀) (g , g'))) ≡⟨ refl ⟩
+          G.e (neutralMap x₀) (cong neutralMap (ΣPathP (invEq (G.eq x) g , invEq (PA.eq TA) g'))) ≡⟨ {!!} ⟩
+          g A.+ g' ∎-}
+-}
+
+  module tests where
+    open neutral PA
+    coherence : congLink (B².lnk (B²prod PA PA)) PA.lnk neutralMap ≡ Hom+ A
+    coherence = {!!}
+-}
