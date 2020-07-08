@@ -59,8 +59,8 @@ trivialLink : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → Link G (π G x)
 trivialLink G x₀ = link (λ x → s x x₀) (islink (λ x → isEquiv-s x x₀) (λ x → isHom-s x x₀))
   where open S G
 
-makeLink-pnt : (G : Gerbe {ℓ}) {A : AbGroup {ℓ'}} {x₀ : ⟨ G ⟩} → AbGroupEquiv (π G x₀) A → Link G A
-makeLink-pnt G {A = A} {x₀ = x₀} f = link (λ x → GroupEquiv.eq (e x) .fst)
+makeLink-pnt : {G : Gerbe {ℓ}} {A : AbGroup {ℓ'}} {x₀ : ⟨ G ⟩} → AbGroupEquiv (π G x₀) A → Link G A
+makeLink-pnt {G = G} {A = A} {x₀ = x₀} f = link (λ x → GroupEquiv.eq (e x) .fst)
   (islink (λ x → GroupEquiv.eq (e x) .snd) (λ x → GroupEquiv.isHom (e x))) where
   e : (x : ⟨ G ⟩) → AbGroupEquiv (π G x) A
   e x = compGroupEquiv (S.s-groupEquiv G x x₀) f
@@ -188,5 +188,8 @@ module _ {ℓA ℓB} {G : Gerbe {ℓ}} {H : Gerbe {ℓ'}} {A : AbGroup {ℓA}} {
     retr : retract eq→ eq←
     retr (g , coh) = ΣPathP (refl , Σ≡Prop (λ _ → isSetGroupHom _ _) refl)
 
-  deloopUnique : isContr deloopType
-  deloopUnique = isOfHLevelRespectEquiv 0 (invEquiv caracDeloopType) (Deloop.deloop , Deloop.propDeloop _)
+  deloopContr : isContr deloopType
+  deloopContr = isOfHLevelRespectEquiv 0 (invEquiv caracDeloopType) (Deloop.deloop , Deloop.propDeloop _)
+
+  deloopUnique : isProp deloopType
+  deloopUnique = isContr→isProp deloopContr
