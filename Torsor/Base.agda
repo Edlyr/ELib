@@ -55,6 +55,7 @@ record TorsorEquiv {G : Group {ℓ}} {ℓT ℓT' : Level} (T : Torsor G {ℓT}) 
     eq : T.Carrier ≃ T'.Carrier
     hom : (x : T.Carrier) (g : ⟨ G ⟩) → equivFun eq (x T.⋆ g) ≡ (equivFun eq x T'.⋆ g)
 
+
 compTorsorEquiv : {G : Group {ℓ}} {ℓT ℓT' ℓT'' : Level} {T : Torsor G {ℓT}} {T' : Torsor G {ℓT'}} {T'' : Torsor G {ℓT''}} →
   TorsorEquiv T T' → TorsorEquiv T' T'' → TorsorEquiv T T''
 compTorsorEquiv {G = G} {T = T} {T' = T'} {T'' = T''} (t-equiv (f , eqf) homf) (t-equiv (g , eqg) homg) =
@@ -78,6 +79,13 @@ torsorEquivEq {G = G} {T = T} {T' = T'} f g p i = t-equiv (p i) (lemma i) where
   open Torsor
   lemma : PathP (λ i → (x : Carrier T) (g : ⟨ G ⟩) → equivFun (p i) ((T ⋆ x) g) ≡ (T' ⋆ equivFun (p i) x) g) (TorsorEquiv.hom f) (TorsorEquiv.hom g)
   lemma = toPathP ((isPropΠ2 λ _ _ → is-set T' _ _) _ _)
+
+torsorEquivSwap : {G : Group {ℓ}} {ℓT ℓT' : Level} (T : Torsor G {ℓT}) (T' : Torsor G {ℓT'}) → TorsorEquiv T T' ≃ TorsorEquiv T' T
+torsorEquivSwap T T' = isoToEquiv (iso invTorsorEquiv invTorsorEquiv
+  (λ eq → torsorEquivEq _ _ (equivEq _ _ refl)) (λ eq → torsorEquivEq _ _ (equivEq _ _ refl)))
+  -- Here we should use some kind of "invEquivIsInvolutive" instead of "equivEq _ _ refl" to improve readability,
+  -- but such a function has yet to be implemented in the cubical agda library
+  -- might do a PR later
 
 isPropIsTorsor : {G : Group {ℓ}} {X : Type ℓ'} {_⋆_ : X → ⟨ G ⟩ → X} → isProp (IsTorsor G X _⋆_)
 isPropIsTorsor {G = G} {X = X} {_⋆_ = _⋆_} = isOfHLevelRespectEquiv 1 equiv isPropType where
@@ -158,7 +166,7 @@ trivializeEquiv {G = G} T = isoToEquiv (iso f g sec retr) where
 
   retr : retract f g
   retr t = t T.⋆ G.0g ≡⟨ T.neutral t ⟩ t ∎
-{-
+
 module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) {ℓ' : Level} where
   open Group G
   RawRActionStruct : Type ℓ' → Type _
@@ -335,4 +343,3 @@ module _ (G : Group {ℓ}) where
 
   finalLemma : GroupEquiv ΩB G
   finalLemma = compGroupEquiv eq1 (compGroupEquiv eq2 eq3)
--}
