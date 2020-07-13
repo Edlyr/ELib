@@ -84,3 +84,6 @@ pathToEquiv∙ : ∀ {ℓ} {A B : Type ℓ} (p : A ≡ B) {C : Type ℓ} (q : B 
 pathToEquiv∙ {ℓ} {A} {B} p =
     J (λ C q → pathToEquiv (p ∙ q) ≡ compEquiv (pathToEquiv p) (pathToEquiv q))
     (cong pathToEquiv (sym (rUnit p)) ∙ sym (compEquivEquivId _) ∙ cong (λ x → compEquiv (pathToEquiv p) x) (sym pathToEquivRefl))
+
+invEquivInvo : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} (eq : A ≃ B) → invEquiv (invEquiv eq) ≡ eq
+invEquivInvo eq = equivEq _ _ refl
