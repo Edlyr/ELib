@@ -8,6 +8,7 @@ open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.GroupoidLaws
 open import Cubical.Foundations.Path
 open import Cubical.Foundations.Univalence
+open import Cubical.Foundations.Function using (_∘_)
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc)
 open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩ ; AbGroup→Group to GRP)
@@ -75,37 +76,20 @@ module _ (A : AbGroup {ℓ}) (G : B² A {ℓ}) (x₀ : B².Carrier G) where
          p ∙ invEq (G.eq y) g ∙ invEq (G.eq y) g' ≡⟨ cong (p ∙_) (sym (isGroupHomInv (G.group-equiv y) g g')) ⟩
          p ∙ invEq (G.eq y) (g A.+ g') ∎)
       {!!} {!!} {!!} {!!}-}
-  test1 : G.Carrier → PG.Carrier
-  test1 = torsor-G x₀
 
-  test2 : isEquiv test1
-  equiv-proof test2 y = {!!} where
-    pnt₀ : fiber test1 (test1 x₀)
-    pnt₀ = x₀ , refl --uaTorsor (invTorsorEquiv (trivialize (test1 x₀) refl))
+  triv : G.Carrier → PG.Carrier
+  triv = torsor-G x₀
 
-    test0 : fiber test1 TA ≃ (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
-    test0 =
-      fiber test1 TA                               ≃⟨ idEquiv _ ⟩
-      Σ G.Carrier (λ x → test1 x ≡ TA)             ≃⟨ Σ-cong-equiv-snd (λ x → compEquiv (invEquiv (TorsorPath _ _)) (torsorEquivSwap _ _)) ⟩
-      Σ G.Carrier (λ x → TorsorEquiv TA (test1 x)) ≃⟨ Σ-cong-equiv-snd (λ x → invEquiv (trivializeEquiv (test1 x))) ⟩
+  isEquivTriv : isEquiv triv
+  equiv-proof isEquivTriv T = recPropTrunc isPropIsContr (λ p → subst (isContr ∘ fiber triv) p contrTA) (PG.conn TA T) where
+    equiv : fiber triv TA ≃ (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
+    equiv =
+      fiber triv TA                               ≃⟨ idEquiv _ ⟩
+      Σ G.Carrier (λ x → triv x ≡ TA)             ≃⟨ Σ-cong-equiv-snd (λ x → compEquiv (invEquiv (TorsorPath _ _)) (torsorEquivSwap _ _)) ⟩
+      Σ G.Carrier (λ x → TorsorEquiv TA (triv x)) ≃⟨ Σ-cong-equiv-snd (λ x → invEquiv (trivializeEquiv (triv x))) ⟩
       Σ G.Carrier (λ x → x₀ ≡ x) ■
 
-    {-prop : (α : fiber test1 (test1 x₀)) → pnt₀ ≡ α
-    prop (x , p) = ΣPathP (subst Torsor.Carrier (sym p) refl , {!!}) where
-      lemma : cong test1 (subst Torsor.Carrier (sym p) refl) ≡ sym p
-      lemma = torsorPathEq _ _ (
-        cong Torsor.Carrier (cong test1 (subst Torsor.Carrier (sym p) refl))
-          ≡⟨ {!!} ⟩
-        cong Torsor.Carrier (sym p) ∎)
-      test : I → {!!}
-      test i = {!Torsor.Carrier
-       (test1 (subst Torsor.Carrier (λ i₁ → p (~ i₁)) (λ _ → x₀) i))!}-}
-
-
-{- Trying to see under which assumptions the following might hold
-TheBigLemma : {A : Type ℓ} (x y : A) (p : (x ≡ x) ≡ (x ≡ y)) (q : x ≡ x) → transport p q ≡ transport (λ i → x ≡ transport p refl i) q
-TheBigLemma {A = A} x y p q = {!!} where
-  lemma : (z : A) (q : x ≡ z) (p : (x ≡ z) ≡ (x ≡ y)) → transport p q ≡ transport (λ i → x ≡ (sym q ∙ transport p q) i) q
-  lemma z = J (λ z q → (p : (x ≡ z) ≡ (x ≡ y)) → transport p q ≡ transport (λ i → x ≡ (sym q ∙ transport p q) i) q)
-    λ p → sym (fromPathP {A = λ i → x ≡ (refl ∙ transport p refl) i} (transport (sym (PathP≡compPath _ _ _)) (sym (lUnit _ ∙ lUnit _))))
--}
+    contrTA : isContr (fiber triv TA)
+    contrTA = isOfHLevelRespectEquiv 0 (invEquiv equiv) lemma where
+      lemma : isContr (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
+      lemma = ((x₀ , refl) , λ (x , p) → λ i → p i , λ j → p (i ∧ j))
