@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical #-}
 
-module ELib.Torsor.Torsor where
+module ELib.Torsor.Base where
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.HLevels
@@ -138,8 +138,27 @@ trivialize {G = G} T t₀ = t-equiv (isoToEquiv (iso f g sec retr)) lemma where
 
   lemma : (g g' : ⟨ G ⟩) → f (g + g') ≡ f g T.⋆ g'
   lemma g g' = sym (T.assoc _ _ _)
-  
 
+trivializeEquiv : {G : Group {ℓ}} {ℓT : Level} (T : Torsor G {ℓT}) → Torsor.Carrier T ≃ TorsorEquiv (principalTorsor G) T
+trivializeEquiv {G = G} T = isoToEquiv (iso f g sec retr) where
+  module T = Torsor T
+  module P = Torsor (principalTorsor G)
+  module G = Group G
+  f : T.Carrier → TorsorEquiv (principalTorsor G) T
+  f = trivialize T
+  g : TorsorEquiv (principalTorsor G) T → T.Carrier
+  g eq = TorsorEquiv.eq eq .fst G.0g
+
+  sec : section f g
+  sec (t-equiv (fun , eq) hom) = torsorEquivEq _ _ (equivEq _ _ (funExt λ x →
+    fun G.0g T.⋆ x   ≡⟨ sym (hom G.0g x) ⟩
+    fun (G.0g G.+ x) ≡⟨ cong fun (G.lid x) ⟩
+    fun x ∎
+    ))
+
+  retr : retract f g
+  retr t = t T.⋆ G.0g ≡⟨ T.neutral t ⟩ t ∎
+{-
 module TorsorΣTheory {ℓ : Level} (G : Group {ℓ}) {ℓ' : Level} where
   open Group G
   RawRActionStruct : Type ℓ' → Type _
@@ -229,6 +248,19 @@ carac-pathToTorsorEquiv {T = T} {T' = T'} p = ua-inj _ _ (
   ua-inj : (a b : _) → ua a ≡ ua b → a ≡ b
   ua-inj a b p = a ≡⟨ sym (pathToEquiv-ua a) ⟩ pathToEquiv (ua a) ≡⟨ cong pathToEquiv p ⟩ pathToEquiv (ua b) ≡⟨ pathToEquiv-ua b ⟩ b ∎
 
+torsorPathEq : {G : Group {ℓ}} {T T' : Torsor G {ℓ'}} (p q : T ≡ T') → (cong Torsor.Carrier p ≡ cong Torsor.Carrier q) → p ≡ q
+torsorPathEq p q path =
+  p                              ≡⟨ sym (retEq (TorsorPath _ _) p) ⟩
+  uaTorsor (pathToTorsorEquiv p) ≡⟨ cong uaTorsor (torsorEquivEq _ _ lemma) ⟩
+  uaTorsor (pathToTorsorEquiv q) ≡⟨ retEq (TorsorPath _ _) q ⟩
+  q ∎ where
+  lemma : TorsorEquiv.eq (pathToTorsorEquiv p) ≡ TorsorEquiv.eq (pathToTorsorEquiv q)
+  lemma =
+    TorsorEquiv.eq (pathToTorsorEquiv p) ≡⟨ sym (carac-pathToTorsorEquiv p) ⟩
+    pathToEquiv (cong Torsor.Carrier p)  ≡⟨ cong pathToEquiv path ⟩
+    pathToEquiv (cong Torsor.Carrier q)  ≡⟨ carac-pathToTorsorEquiv q ⟩
+    TorsorEquiv.eq (pathToTorsorEquiv q) ∎
+
 isGroupoidTorsor : {G : Group {ℓ}} → isGroupoid (Torsor G {ℓ'})
 isGroupoidTorsor {G = G} = isOfHLevelRespectEquiv 3 (isoToEquiv (invIso TorsorIsoTorsorΣ)) lemma where
   open TorsorΣTheory G
@@ -303,3 +335,4 @@ module _ (G : Group {ℓ}) where
 
   finalLemma : GroupEquiv ΩB G
   finalLemma = compGroupEquiv eq1 (compGroupEquiv eq2 eq3)
+-}
