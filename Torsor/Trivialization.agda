@@ -9,6 +9,7 @@ open import Cubical.Foundations.GroupoidLaws
 open import Cubical.Foundations.Path
 open import Cubical.Foundations.Univalence
 open import Cubical.Foundations.Function using (_∘_)
+open import Cubical.Foundations.Isomorphism
 open import Cubical.HITs.PropositionalTruncation renaming (rec to recPropTrunc)
 open import Cubical.Structures.Group hiding (⟨_⟩)
 open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩ ; AbGroup→Group to GRP)
@@ -23,7 +24,7 @@ private
   variable
     ℓ ℓ' : Level
 
-module _ (A : AbGroup {ℓ}) (G : B² A {ℓ}) (x₀ : B².Carrier G) where
+module _ (A : AbGroup {ℓ}) (G : B² A {ℓ}) where
   TA : Torsor (GRP A)
   TA = principalTorsor (GRP A)
 
@@ -77,19 +78,29 @@ module _ (A : AbGroup {ℓ}) (G : B² A {ℓ}) (x₀ : B².Carrier G) where
          p ∙ invEq (G.eq y) (g A.+ g') ∎)
       {!!} {!!} {!!} {!!}-}
 
-  triv : G.Carrier → PG.Carrier
-  triv = torsor-G x₀
+  module _ (x₀ : G.Carrier) where
+    triv : G.Carrier → PG.Carrier
+    triv = torsor-G x₀
 
-  isEquivTriv : isEquiv triv
-  equiv-proof isEquivTriv T = recPropTrunc isPropIsContr (λ p → subst (isContr ∘ fiber triv) p contrTA) (PG.conn TA T) where
-    equiv : fiber triv TA ≃ (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
-    equiv =
-      fiber triv TA                               ≃⟨ idEquiv _ ⟩
-      Σ G.Carrier (λ x → triv x ≡ TA)             ≃⟨ Σ-cong-equiv-snd (λ x → compEquiv (invEquiv (TorsorPath _ _)) (torsorEquivSwap _ _)) ⟩
-      Σ G.Carrier (λ x → TorsorEquiv TA (triv x)) ≃⟨ Σ-cong-equiv-snd (λ x → invEquiv (trivializeEquiv (triv x))) ⟩
-      Σ G.Carrier (λ x → x₀ ≡ x) ■
+    isEquivTriv : isEquiv triv
+    equiv-proof isEquivTriv T = recPropTrunc isPropIsContr (λ p → subst (isContr ∘ fiber triv) p contrTA) (PG.conn TA T) where
+      equiv : fiber triv TA ≃ (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
+      equiv =
+        fiber triv TA                               ≃⟨ idEquiv _ ⟩
+        Σ G.Carrier (λ x → triv x ≡ TA)             ≃⟨ Σ-cong-equiv-snd (λ x → compEquiv (invEquiv (TorsorPath _ _)) (torsorEquivSwap _ _)) ⟩
+        Σ G.Carrier (λ x → TorsorEquiv TA (triv x)) ≃⟨ Σ-cong-equiv-snd (λ x → invEquiv (trivializeEquiv (triv x))) ⟩
+        Σ G.Carrier (λ x → x₀ ≡ x) ■
 
-    contrTA : isContr (fiber triv TA)
-    contrTA = isOfHLevelRespectEquiv 0 (invEquiv equiv) lemma where
-      lemma : isContr (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
-      lemma = ((x₀ , refl) , λ (x , p) → λ i → p i , λ j → p (i ∧ j))
+      contrTA : isContr (fiber triv TA)
+      contrTA = isOfHLevelRespectEquiv 0 (invEquiv equiv) lemma where
+        lemma : isContr (Σ[ x ∈ G.Carrier ] x₀ ≡ x)
+        lemma = ((x₀ , refl) , λ (x , p) → λ i → p i , λ j → p (i ∧ j))
+
+  trivializeGerbe : G.Carrier → G.Carrier ≃ PG.Carrier
+  trivializeGerbe x₀ = triv x₀ , isEquivTriv x₀
+
+  deTrivialize : G.Carrier ≃ PG.Carrier → G.Carrier
+  deTrivialize eq = invEq eq TA
+
+  retr : retract trivializeGerbe deTrivialize
+  retr x₀ = transportRefl x₀
