@@ -298,13 +298,14 @@ module _ (G : Group {ℓ}) where
   eq1 = groupequiv (invEquiv (TorsorPath PT PT)) morph where
     open TorsorEquiv
     open Torsor
-    morph : isGroupHom ΩB ΩB≃ (invEq (TorsorPath PT PT))
-    morph p q = torsorEquivEq _ _ (
-      eq (pathToTorsorEquiv (p ∙ q))                                          ≡⟨ sym (carac-pathToTorsorEquiv _) ⟩
-      pathToEquiv (cong Carrier (p ∙ q))                                      ≡⟨ cong pathToEquiv (cong-∙ Carrier p q) ⟩
-      pathToEquiv (cong Carrier p ∙ cong Carrier q)                           ≡⟨ pathToEquiv∙ _ _ ⟩
-      compEquiv (pathToEquiv (cong Carrier p)) (pathToEquiv (cong Carrier q)) ≡⟨ (λ i → compEquiv (carac-pathToTorsorEquiv p i) (carac-pathToTorsorEquiv q i)) ⟩
-      compEquiv (eq (pathToTorsorEquiv p)) (eq (pathToTorsorEquiv q)) ∎)
+    abstract
+      morph : isGroupHom ΩB ΩB≃ (invEq (TorsorPath PT PT))
+      morph p q = torsorEquivEq _ _ (
+        eq (pathToTorsorEquiv (p ∙ q))                                          ≡⟨ sym (carac-pathToTorsorEquiv (p ∙ q)) ⟩
+        pathToEquiv (cong Carrier (p ∙ q))                                      ≡⟨ cong pathToEquiv (cong-∙ Carrier p q) ⟩
+        pathToEquiv (cong Carrier p ∙ cong Carrier q)                           ≡⟨ pathToEquiv∙ _ _ ⟩
+        compEquiv (pathToEquiv (cong Carrier p)) (pathToEquiv (cong Carrier q)) ≡⟨ (λ i → compEquiv (carac-pathToTorsorEquiv p i) (carac-pathToTorsorEquiv q i)) ⟩
+        compEquiv (eq (pathToTorsorEquiv p)) (eq (pathToTorsorEquiv q)) ∎)
 
   dual : Group
   dual = makeGroup 0g (λ x y → y + x) -_ is-set (λ x y z → sym (assoc z y x)) lid rid invl invr where open Group G
@@ -318,19 +319,20 @@ module _ (G : Group {ℓ}) where
     g : ⟨ dual ⟩ → ⟨ ΩB≃ ⟩
     g x = trivialize _ x
 
-    sec : section f g
-    sec x = rid x
+    abstract
+      sec : section f g
+      sec x = rid x
 
-    retr : retract f g
-    retr (t-equiv eq hom) = torsorEquivEq _ _ (equivEq _ _ (funExt (λ x →
-      fst eq 0g + x ≡⟨ sym (hom _ _) ∙ cong (fst eq) (lid x) ⟩ fst eq x ∎)))
+      retr : retract f g
+      retr (t-equiv eq hom) = torsorEquivEq _ _ (equivEq _ _ (funExt (λ x →
+        fst eq 0g + x ≡⟨ sym (hom _ _) ∙ cong (fst eq) (lid x) ⟩ fst eq x ∎)))
 
-    morph : (a b : ⟨ ΩB≃ ⟩) → f (compTorsorEquiv a b) ≡ (f b + f a)
-    morph a b =
-      fst (eq b) (f a) ≡⟨ cong (fst (eq b)) (sym (lid (f a))) ⟩
-      fst (eq b) (0g + f a) ≡⟨ hom b 0g (f a) ⟩
-      f b + f a ∎
-      where open TorsorEquiv
+      morph : (a b : ⟨ ΩB≃ ⟩) → f (compTorsorEquiv a b) ≡ (f b + f a)
+      morph a b =
+        fst (eq b) (f a) ≡⟨ cong (fst (eq b)) (sym (lid (f a))) ⟩
+        fst (eq b) (0g + f a) ≡⟨ hom b 0g (f a) ⟩
+        f b + f a ∎
+        where open TorsorEquiv
 
   eq3 : GroupEquiv dual G
   eq3 = groupequiv eq morph where
@@ -338,8 +340,30 @@ module _ (G : Group {ℓ}) where
     eq : ⟨ dual ⟩ ≃ ⟨ G ⟩
     eq = isoToEquiv (iso (λ x → - x) (λ x → - x) invInvo invInvo)
 
-    morph : (x y : _) → - (y + x) ≡ (- x - y)
-    morph x y = sym (invUniqueL (assoc _ _ _ ∙ cong (_+ x) (sym (assoc _ _ _) ∙ cong (- x +_) (invl y) ∙ rid (- x)) ∙ invl x))
+    abstract
+      morph : (x y : _) → - (y + x) ≡ (- x - y)
+      morph x y = sym (invUniqueL (assoc _ _ _ ∙ cong (_+ x) (sym (assoc _ _ _) ∙ cong (- x +_) (invl y) ∙ rid (- x)) ∙ invl x))
 
   finalLemma : GroupEquiv ΩB G
-  finalLemma = compGroupEquiv eq1 (compGroupEquiv eq2 eq3)
+  finalLemma = groupequiv (f , isEq) isHom
+    
+    where
+    preFinalLemma : GroupEquiv ΩB G
+    preFinalLemma = compGroupEquiv eq1 (compGroupEquiv eq2 eq3)
+
+    open GroupLemmas G
+    f : ⟨ ΩB ⟩ → ⟨ G ⟩
+    f x = - transport (cong Torsor.Carrier x) 0g
+
+    equal : (x : _) → GroupEquiv.eq preFinalLemma .fst x ≡ - transport (cong Torsor.Carrier x) 0g
+    equal x =
+      GroupEquiv.eq preFinalLemma .fst x ≡⟨ refl ⟩
+      (- TorsorEquiv.eq (pathToTorsorEquiv x) .fst 0g) ≡⟨ cong (λ f → - fst f 0g) (sym (carac-pathToTorsorEquiv x)) ⟩
+      (- pathToEquiv (cong Torsor.Carrier x) .fst 0g) ∎
+
+    abstract
+      isEq : isEquiv f
+      isEq = transport (cong isEquiv (funExt equal)) (GroupEquiv.eq preFinalLemma .snd)
+
+      isHom : isGroupHom ΩB G f
+      isHom = transport (cong (isGroupHom ΩB G) (funExt equal)) (GroupEquiv.isHom preFinalLemma)
