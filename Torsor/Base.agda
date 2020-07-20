@@ -269,15 +269,16 @@ torsorPathEq p q path =
     pathToEquiv (cong Torsor.Carrier q)  ≡⟨ carac-pathToTorsorEquiv q ⟩
     TorsorEquiv.eq (pathToTorsorEquiv q) ∎
 
-isGroupoidTorsor : {G : Group {ℓ}} → isGroupoid (Torsor G {ℓ'})
-isGroupoidTorsor {G = G} = isOfHLevelRespectEquiv 3 (isoToEquiv (invIso TorsorIsoTorsorΣ)) lemma where
-  open TorsorΣTheory G
-  is-set : (T : TorsorΣ) → isSet (fst T)
-  is-set T = T .snd .snd .fst
-  lemma : isGroupoid TorsorΣ
-  lemma T T' = isOfHLevelRespectEquiv 2 ΣPath≃PathΣ (isSetΣ (isOfHLevel≡ 2 (is-set T) (is-set T')) λ X →
-    isOfHLevelPathP 2 (isSetΣ
-      (isSetΠ2 λ _ _ → is-set T') λ _⋆_ → isProp→isSet (isPropTorsorAxioms _ _)) _ _)
+abstract
+  isGroupoidTorsor : {G : Group {ℓ}} → isGroupoid (Torsor G {ℓ'})
+  isGroupoidTorsor {G = G} = isOfHLevelRespectEquiv 3 (isoToEquiv (invIso TorsorIsoTorsorΣ)) lemma where
+    open TorsorΣTheory G
+    is-set : (T : TorsorΣ) → isSet (fst T)
+    is-set T = T .snd .snd .fst
+    lemma : isGroupoid TorsorΣ
+    lemma T T' = isOfHLevelRespectEquiv 2 ΣPath≃PathΣ (isSetΣ (isOfHLevel≡ 2 (is-set T) (is-set T')) λ X →
+      isOfHLevelPathP 2 (isSetΣ
+        (isSetΠ2 λ _ _ → is-set T') λ _⋆_ → isProp→isSet (isPropTorsorAxioms _ _)) _ _)
 
 module _ (G : Group {ℓ}) where
   PT : Torsor G
