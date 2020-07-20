@@ -126,47 +126,18 @@ module _ (Hopf : S² → Type) (baseS : Hopf base₂ ≡ S¹) (total : Σ S² Ho
     step4 : isContr S¹
     step4 = transport (cong isContr (groupoidTruncIdempotent isGroupoidS¹)) step3
 
-  -_ : Int → Int
-  -_ (pos 0) = pos 0
-  -_ (pos (suc n)) = negsuc n
-  -_ (negsuc n) = pos (suc n)
-
-  -rCancel : (x : Int) → (x + (- x)) ≡ 0
-  -rCancel (pos 0) = refl
-  -rCancel (pos (suc 0)) = refl
-  -rCancel (pos (suc (suc n))) =
-    predInt (pos (suc (suc n)) +negsuc n)
-      ≡⟨ predInt+negsuc n _ ⟩
-    pos (suc n) +negsuc n
-      ≡⟨ -rCancel (pos (suc n)) ⟩
-    pos 0 ∎
-  -rCancel (negsuc 0) = refl
-  -rCancel (negsuc (suc n)) =
-    sucInt (sucInt (negsuc (suc n) +pos n))
-      ≡⟨ cong sucInt (sucInt+pos n _) ⟩
-    sucInt (negsuc n +pos n)
-      ≡⟨ -rCancel (negsuc n) ⟩
-    0 ∎
-
   groupℤ : AbGroup
-  groupℤ = makeAbGroup {G = Int} 0 _+_ -_ isSetInt +-assoc (λ _ → refl) -rCancel +-comm
+  groupℤ = makeAbGroup ℤ.0g ℤ._+_ ℤ.-_ ℤ.is-set ℤ.assoc ℤ.rid ℤ.invr +-comm where
+    module ℤ = Group intGroup
 
   gerbe-base : Gerbe
-  gerbe-base = gerbe S¹ (isgerbe ∣ base₁ ∣ isGroupoidS¹ connS¹ comm') where
-    winding-inj : (p q : _) → winding p ≡ winding q → p ≡ q
-    winding-inj p q = invEq (_ , isEquiv→isEmbedding (isoToEquiv (ΩS¹IsoInt) .snd) p q)
-    comm : (p q : base₁ ≡ base₁) → p ∙ q ≡ q ∙ p
-    comm p q = winding-inj (p ∙ q) (q ∙ p) (
-      winding (p ∙ q) ≡⟨ winding-hom p q ⟩
-      winding p + winding q ≡⟨ +-comm (winding p) (winding q) ⟩
-      winding q + winding p ≡⟨ sym (winding-hom q p) ⟩
-      winding (q ∙ p) ∎)
-    comm' : (x : S¹) (p q : x ≡ x) → p ∙ q ≡ q ∙ p
-    comm' x = recPropTrunc (isPropΠ2 λ _ _ → isGroupoidS¹ _ _ _ _)
-      (λ p → transport (λ i → (r s : p i ≡ p i) → r ∙ s ≡ s ∙ r) comm) (isConnectedS¹ x)
+  gerbe-base = gerbe S¹ (isgerbe ∣ base₁ ∣ isGroupoidS¹ connS¹ comm) where
+    comm : (x : S¹) (p q : x ≡ x) → p ∙ q ≡ q ∙ p
+    comm x = recPropTrunc (isPropΠ2 λ _ _ → isGroupoidS¹ _ _ _ _)
+      (λ p → transport (λ i → (r s : p i ≡ p i) → r ∙ s ≡ s ∙ r) comm-ΩS¹) (isConnectedS¹ x)
 
   link-base : Link gerbe-base groupℤ
-  link-base = makeLink-pnt gerbe-base hom where
+  link-base = makeLink-pnt hom where
     hom : AbGroupEquiv (π gerbe-base base₁) groupℤ
     hom = groupequiv (isoToEquiv ΩS¹IsoInt) winding-hom
 
@@ -189,4 +160,4 @@ module _ (Hopf : S² → Type) (baseS : Hopf base₂ ≡ S¹) (total : Σ S² Ho
       lemma : nonTrivialGerbe x ≡ nonTrivialGerbe base₂
       lemma = uaB² groupℤ (b²equiv (fst deloop) (deloop .snd .snd)) where
         deloop : deloopType (B².lnk (nonTrivialGerbe x)) (B².lnk (nonTrivialGerbe base₂)) (grouphom (λ x → x) (λ _ _ → refl)) (s x) (s base₂)
-        deloop = deloopUnique _ _ _ _ _ .fst
+        deloop = deloopContr _ _ _ _ _ .fst
