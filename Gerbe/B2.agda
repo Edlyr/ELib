@@ -26,10 +26,10 @@ record B² (A : AbGroup {ℓ}) {ℓ' : Level} : Type (ℓ-max ℓ (ℓ-suc ℓ')
   field
     grb : Gerbe {ℓ'}
     lnk : Link grb A
-                   
+
   open Gerbe grb public
   open Link lnk public
-                
+
 record B²Equiv (A : AbGroup {ℓ}) {ℓG ℓH : Level} (G : B² A {ℓG}) (H : B² A {ℓH}) : Type (ℓ-max (ℓ-max ℓ ℓG) ℓH) where
   constructor b²equiv
   module G = B² G
@@ -37,7 +37,7 @@ record B²Equiv (A : AbGroup {ℓ}) {ℓG ℓH : Level} (G : B² A {ℓG}) (H : 
   field
     fun : G.Carrier → H.Carrier
     p : congLink G.lnk H.lnk fun ≡ grouphom (λ x → x) (λ _ _ → refl)
-                                                               
+
   abstract
     isEquiv-fun : isEquiv fun
     isEquiv-fun = isEmbedding×isSurjection→isEquiv (embed , surj) where
@@ -52,17 +52,22 @@ record B²Equiv (A : AbGroup {ℓ}) {ℓG ℓH : Level} (G : B² A {ℓG}) (H : 
            invEq (H.eq (fun x)) ∘ GroupHom.fun (congLink G.lnk H.lnk fun) ∘ G.e x
              ≡⟨ cong (λ r → invEq (H.eq (fun x)) ∘ r ∘ G.e x) (cong GroupHom.fun p) ⟩
            invEq (H.eq (fun x)) ∘ G.e x ∎
-                                        
+
       embed : isEmbedding fun
       embed x y = recPropTrunc (isPropIsEquiv _) (subLemma x y) (G.conn x y) where
         subLemma : (x y : _) (p : x ≡ y) → isEquiv (cong {x = x} {y = y} fun)
         subLemma x y = J (λ y p → isEquiv (cong {x = x} {y = y} fun)) (lemma x)
-                                                                             
+
       surj : isSurjection fun
       surj y = recPropTrunc propTruncIsProp (λ x → recPropTrunc propTruncIsProp (λ p → ∣ x , p ∣) (H.conn (fun x) y)) (G.inhabited)
-                                                                                                                      
+
   eq : G.Carrier ≃ H.Carrier
   eq = fun , isEquiv-fun
+
+b²EquivEq : {A : AbGroup {ℓ}} {ℓG ℓG' : Level} {G : B² A {ℓG}} {G' : B² A {ℓG'}} (f g : B²Equiv A G G') → B²Equiv.fun f ≡ B²Equiv.fun g → f ≡ g
+b²EquivEq {G = G} {G' = G'} f g p i = b²equiv (p i) (lemma i) where
+  lemma : PathP (λ i → congLink (B².lnk G) (B².lnk G') (p i) ≡ grouphom (λ x → x) (λ _ _ → refl)) (B²Equiv.p f) (B²Equiv.p g)
+  lemma = toPathP (isSetGroupHom _ _ _ _)
 
 {-  record B²Equiv (G H : B²) : Type ℓ where
     constructor b²equiv
@@ -349,7 +354,7 @@ module ΩB² (A : AbGroup {ℓ}) (G : B² A {ℓ'}) where
       ≃⟨ invEquiv funExtEquiv ⟩
     ((x : X) → x ≡ x) ■
 
-  test : ((x : X) → x ≡ x) ≃ 
+  test : ((x : X) → x ≡ x) ≃
 
   ZG-gerbe : Gerbe
   ZG-gerbe = gerbe ZG (isgerbe ∣ idEquiv X , ∣ refl ∣ ∣ {!!} {!!} {!!}) where
