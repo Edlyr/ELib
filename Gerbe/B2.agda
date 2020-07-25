@@ -293,7 +293,7 @@ module DeloopFunctoriality where
       H' = 2-deloop A B f H x₀ G
       F' = 2-deloop B C g F y₀ H'
 
-module ΩB² (A : AbGroup {ℓ}) (G : B² A {ℓ'}) where
+module ΩB² (A : AbGroup {ℓ}) (G : B² A {ℓ'}) (x₀ : B².Carrier G) where
   module A = AbGroup A
   module G = B² G
   X = G.Carrier

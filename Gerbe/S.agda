@@ -120,11 +120,13 @@ module test-deloop (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (a : ⟨ G ⟩) (b : ⟨
   eq→ (g , p) = compGroupHom (grouphom (cong g) (cong-∙ g)) (s-hom (g a) b)
 
   eq← : AbGroupHom (π G a) (π H b) → G∙ →∙ H∙
-  eq← (grouphom f hom) = Deloop.deloop f hom .fst , sym (Deloop.deloop f hom .snd .fst)
+  eq← f = deloop .fst , sym (deloop .snd .fst) where
+    open GroupHom
+    open Deloop (fun f) (isHom f)
 
   abstract
     sec : section eq→ eq←
-    sec (grouphom f hom) =
+    sec fhom =
       groupHomEq (s (g a) b ∘ cong g
         ≡⟨ cong (s (g a) b ∘_) (funExt λ q → sym (compPathl-cancel _ _) ∙ cong (sym p ∙_) (! q)) ⟩
       s (g a) b ∘ (λ q → sym p ∙ f q ∙ p)
@@ -132,6 +134,8 @@ module test-deloop (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (a : ⟨ G ⟩) (b : ⟨
       s (g a) b ∘ s b (g a) ∘ f
         ≡⟨ cong (_∘ f) (sym (s-comp _ _ _) ∙ s-id _) ⟩
       f ∎) where
+      f = GroupHom.fun fhom
+      hom = GroupHom.isHom fhom
       g = eq← (grouphom f hom) .fst
       del = Deloop.deloop f hom
       p = del .snd .fst
