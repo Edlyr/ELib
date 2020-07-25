@@ -25,7 +25,7 @@ private
   variable
     ℓ ℓ' : Level
 
-module Trivializations (A : AbGroup {ℓ}) {ℓPG : Level} where
+module Trivializations (A : AbGroup {ℓ}) where
   TA : Torsor (GRP A)
   TA = principalTorsor (GRP A)
 
