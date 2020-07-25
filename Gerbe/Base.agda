@@ -15,6 +15,7 @@ private
     ℓ ℓ' : Level
 
 record IsGerbe (X : Type ℓ) : Type ℓ where
+  no-eta-equality
   constructor isgerbe
   field
     inhabited : ∥ X ∥
@@ -32,7 +33,14 @@ record Gerbe : Type (ℓ-suc ℓ) where
 
 ⟨_⟩ : Gerbe → Type ℓ
 ⟨_⟩ = Gerbe.Carrier
-
+module _ where
+  open IsGerbe
+  isPropIsGerbe : {X : Type ℓ} → isProp (IsGerbe X)
+  inhabited (isPropIsGerbe g1 g2 i) = propTruncIsProp (inhabited g1) (inhabited g2) i
+  grpd (isPropIsGerbe g1 g2 i) = isPropIsGroupoid (grpd g1) (grpd g2) i
+  conn (isPropIsGerbe g1 g2 i) = isPropΠ2 (λ _ _ → propTruncIsProp) (conn g1) (conn g2) i
+  comm (isPropIsGerbe g1 g2 i) = (isPropΠ (λ x → isPropΠ2 λ p q → grpd g1 _ _ _ _)) (comm g1) (comm g2) i
+{-
 isPropIsGerbe : {X : Type ℓ} → isProp (IsGerbe X)
 isPropIsGerbe {X = X} g1 g2 i = isgerbe
   (propTruncIsProp g1.inhabited g2.inhabited i)
@@ -47,6 +55,13 @@ gerbeEq {G = G} {H = H} p i = gerbe (p i) (grb i) where
   open Gerbe
   grb : PathP (λ i → IsGerbe (p i)) (isGerbe G) (isGerbe H)
   grb = toPathP (isPropIsGerbe _ _)
+-}
+  open Gerbe
+  gerbeEq : {G H : Gerbe {ℓ}} → (Gerbe.Carrier G ≡ Gerbe.Carrier H) → G ≡ H
+  Carrier (gerbeEq p i) = p i
+  isGerbe (gerbeEq {G = G} {H = H} p i) = grb i where
+    grb : PathP (λ i → IsGerbe (p i)) (isGerbe G) (isGerbe H)
+    grb = toPathP (isPropIsGerbe _ _)
 
 π : (G : Gerbe {ℓ}) (x : ⟨ G ⟩) → AbGroup {ℓ}
 π G x = makeAbGroup (refl {x = x}) _∙_ sym (Gerbe.grpd G _ _) assoc (λ x → sym (rUnit x)) rCancel (Gerbe.comm G x)
