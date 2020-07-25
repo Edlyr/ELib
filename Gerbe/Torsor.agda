@@ -9,7 +9,7 @@ open import Cubical.Structures.AbGroup renaming (⟨_⟩ to Ab⟨_⟩ ; AbGroup�
 open import Cubical.Data.Sigma
 open import Cubical.Data.Unit
 
-open import ELib.Torsor.Torsor
+open import ELib.Torsor.Base
 open import ELib.Gerbe.Base
 open import ELib.Gerbe.Link
 open import ELib.Gerbe.B2
@@ -78,13 +78,14 @@ Hom+ A = grouphom f isHom where
   open AbGroup A renaming (assoc to assoc+)
   f : Ab⟨ A Ab× A ⟩ → Ab⟨ A ⟩
   f (a , b) = a + b
-  isHom : (x y : Ab⟨ A Ab× A ⟩) → ((fst x + fst y) + (snd x + snd y)) ≡ ((fst x + snd x) + (fst y + snd y))
-  isHom (a , b) (c , d) =
-    (a + c) + (b + d) ≡⟨ sym (assoc+ _ _ _) ⟩
-    a + c + b + d     ≡⟨ cong (a +_) (assoc+ _ _ _ ∙ cong (_+ d) (comm _ _)) ⟩
-    a + (b + c) + d   ≡⟨ cong (a +_) (sym (assoc+ _ _ _)) ⟩
-    a + b + c + d     ≡⟨ assoc+ _ _ _ ⟩
-    (a + b) + (c + d) ∎
+  abstract
+    isHom : (x y : Ab⟨ A Ab× A ⟩) → ((fst x + fst y) + (snd x + snd y)) ≡ ((fst x + snd x) + (fst y + snd y))
+    isHom (a , b) (c , d) =
+      (a + c) + (b + d) ≡⟨ sym (assoc+ _ _ _) ⟩
+      a + c + b + d     ≡⟨ cong (a +_) (assoc+ _ _ _ ∙ cong (_+ d) (comm _ _)) ⟩
+      a + (b + c) + d   ≡⟨ cong (a +_) (sym (assoc+ _ _ _)) ⟩
+      a + b + c + d     ≡⟨ assoc+ _ _ _ ⟩
+      (a + b) + (c + d) ∎
 
 B²prod : {A : AbGroup {ℓ}} {B : AbGroup {ℓ'}} {ℓG ℓH : Level} → B² A {ℓG} → B² B {ℓH} → B² (A Ab× B)
 B²prod {A = A} {B = B} G H = b² _ lnk where -- Making the argument explicit would prevent agda from
@@ -118,28 +119,28 @@ B²prod {A = A} {B = B} G H = b² _ lnk where -- Making the argument explicit wo
   lnk : Link (GerbeProduct G.grb H.grb) (A Ab× B)
   lnk = link e (islink (λ x → snd (eq x)) e-hom)
 
-trivialGroup : AbGroup
-trivialGroup = makeAbGroup tt (λ _ _ → tt) (λ _ → tt)
+trivialAbGroup : AbGroup
+trivialAbGroup = makeAbGroup tt (λ _ _ → tt) (λ _ → tt)
   (isProp→isSet (λ {tt tt → refl })) (λ _ _ _ → refl)
   (λ {tt → refl}) (λ _ → refl) λ _ _ → refl
 
-neutralHom : (G : Group {ℓ}) → GroupHom (GRP trivialGroup) G
+neutralHom : (G : Group {ℓ}) → GroupHom (GRP trivialAbGroup) G
 neutralHom G = grouphom (λ _ → Group.0g G) λ _ _ → sym (Group.rid G _)
 
-BtrivialGroup : B² trivialGroup
-BtrivialGroup = b² unitGerbe unitLink where
+BtrivialAbGroup : B² trivialAbGroup
+BtrivialAbGroup = b² unitGerbe unitLink where
   unitGerbe : Gerbe
   unitGerbe = gerbe Unit (isgerbe ∣ tt ∣ (isSet→isGroupoid (isProp→isSet (λ {tt tt → refl}))) (λ {tt tt → ∣ refl ∣})
     λ _ _ _ → isProp→isSet (λ {tt tt → refl}) _ _ _ _)
 
-  unitLink : Link unitGerbe trivialGroup
+  unitLink : Link unitGerbe trivialAbGroup
   unitLink = makeLink-pnt (groupequiv (isoToEquiv (iso (λ _ → tt) (λ _ → refl) (λ {tt → refl}) λ p → isProp→isSet (λ {tt tt → refl}) _ _ _ _))
     λ _ _ → refl)
 
-trivialB² : isContr (B² trivialGroup)
-trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (groupHomEq (funExt (λ {tt → refl})))))
+trivialB² : isContr (B² trivialAbGroup)
+trivialB² = BtrivialAbGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (groupHomEq (funExt (λ {tt → refl})))))
 
-{-module GerbeAddition (A : AbGroup {ℓ}) where
+module GerbeAddition (A : AbGroup {ℓ}) where
   K² = B² A {ℓ-suc ℓ}
 
   PA : K²
@@ -152,9 +153,9 @@ trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (grou
   G ⊹ G' = 2-deloop PA TA (B²prod G G') where
     open Deloop2 (A Ab× A) A (Hom+ A)
 
-  test-neutral : K²
-  test-neutral = {!!}-}
-{-
+  --test-neutral : K²
+  --test-neutral = {!!}
+
   module neutral (G : K²) where
     module G = B² G
     module PA = B² PA
@@ -168,17 +169,11 @@ trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (grou
       p ⋆ g = p ∙ invEq (G.eq y) g
       postulate
         is-torsor : IsTorsor (GRP A) X _⋆_
-      {-is-torsor = istorsor (G.grpd x y) (G.conn x y)
-        (λ p g g' →
-          (p ∙ invEq (G.eq y) g) ∙ invEq (G.eq y) g' ≡⟨ sym (assoc _ _ _) ⟩
-          p ∙ invEq (G.eq y) g ∙ invEq (G.eq y) g' ≡⟨ cong (p ∙_) (sym (isGroupHomInv (G.group-equiv y) g g')) ⟩
-          p ∙ invEq (G.eq y) (g A.+ g') ∎)
-        {!!} {!!} {!!} {!!}-}
 
-    test : G.Carrier → PA.Carrier → Type _
-    test x t = Σ[ y ∈ G.Carrier ] TorsorEquiv t (torsor-G x y)
+    type : G.Carrier → PA.Carrier → Type _
+    type x t = Σ[ y ∈ G.Carrier ] TorsorEquiv t (torsor-G x y)
 
-    centerTA : (x : G.Carrier) → test x TA
+    centerTA : (x : G.Carrier) → type x TA
     centerTA x = x , t-eq where
       t-eq : TorsorEquiv TA (torsor-G x x)
       t-eq = t-equiv eq is-t-equiv where
@@ -187,33 +182,34 @@ trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (grou
         is-t-equiv : (g g' : Ab⟨ A ⟩) → invEq (G.eq x) (g A.+ g') ≡ invEq (G.eq x) g ∙ invEq (G.eq x) g'
         is-t-equiv g g' = isGroupHomInv (G.group-equiv x) g g'
 
-    contrTA : (x : G.Carrier) → isContr (test x TA)
+    contrTA : (x : G.Carrier) → isContr (type x TA)
     contrTA x = centerTA x , contr where
-      contr : (y : test x TA) → centerTA x ≡ y
-      contr (y , y-eq) = ΣPathP (p , toPathP (torsorEquivEq _ _ (equivEq _ _ (fromPathP lemma)))) where
-        f = TorsorEquiv.eq y-eq .fst
-        p : x ≡ y
-        p = f A.0g
-        lemma : PathP (λ i → A.Carrier → x ≡ (p i)) (invEq (G.eq x)) f
-        lemma = funExt λ g → transport (sym (PathP≡compPath _ _ _)) (
-          invEq (G.eq x) g ∙ f A.0g                         ≡⟨ sym (compPathl-cancel (f A.0g) _) ⟩
-          f A.0g ∙ sym (f A.0g) ∙ invEq (G.eq x) g ∙ f A.0g ≡⟨ cong (f A.0g ∙_) (sym (G.s-carac x y (f A.0g) _)) ⟩
-          f A.0g ∙ (G.s x y ∘ invEq (G.eq x)) g             ≡⟨ cong (λ ϕ → f A.0g ∙ ϕ g) (sym (G.coherence-inv y x)) ⟩
-          f A.0g ∙ invEq (G.eq y) g                         ≡⟨ sym (TorsorEquiv.hom y-eq A.0g g) ⟩
-          f (A.0g A.+ g)                                    ≡⟨ cong (λ g → f g) (A.lid g) ⟩
-          f g ∎)
+      abstract
+        contr : (y : type x TA) → centerTA x ≡ y
+        contr (y , y-eq) = ΣPathP (p , toPathP (torsorEquivEq _ _ (equivEq _ _ (fromPathP lemma)))) where
+          f = TorsorEquiv.eq y-eq .fst
+          p : x ≡ y
+          p = f A.0g
+          lemma : PathP (λ i → A.Carrier → x ≡ (p i)) (invEq (G.eq x)) f
+          lemma = funExt λ g → transport (sym (PathP≡compPath _ _ _)) (
+            invEq (G.eq x) g ∙ f A.0g                         ≡⟨ sym (compPathl-cancel (f A.0g) _) ⟩
+            f A.0g ∙ sym (f A.0g) ∙ invEq (G.eq x) g ∙ f A.0g ≡⟨ cong (f A.0g ∙_) (sym (G.s-carac x y (f A.0g) _)) ⟩
+            f A.0g ∙ (G.s x y ∘ invEq (G.eq x)) g             ≡⟨ cong (λ ϕ → f A.0g ∙ ϕ g) (sym (G.coherence-inv y x)) ⟩
+            f A.0g ∙ invEq (G.eq y) g                         ≡⟨ sym (TorsorEquiv.hom y-eq A.0g g) ⟩
+            f (A.0g A.+ g)                                    ≡⟨ cong (λ g → f g) (A.lid g) ⟩
+            f g ∎)
 
-    contrT : (x : G.Carrier) (t : PA.Carrier) → isContr (test x t)
-    contrT x t = recPropTrunc isPropIsContr (λ p → subst (λ t → isContr (test x t)) p (contrTA x)) (PA.conn TA t)
+    contrT : (x : G.Carrier) (t : PA.Carrier) → isContr (type x t)
+    contrT x t = recPropTrunc isPropIsContr (λ p → subst (λ t → isContr (type x t)) p (contrTA x)) (PA.conn TA t)
 
     contrT-TA : (x : G.Carrier) → contrT x TA ≡ contrTA x
     contrT-TA x = isPropIsContr _ _
 
-    mapT : (α : B²prod G PA .B².Carrier) → test (fst α) (snd α)
+    mapT : (α : B²prod G PA .B².Carrier) → type (fst α) (snd α)
     mapT (x , t) = contrT x t .fst
 
-    cong-test : {x : G.Carrier} → (p : (x , TA) ≡ (x , TA)) → PathP (λ i → test (fst (p i)) (snd (p i))) (mapT (x , TA)) (mapT (x , TA))
-    cong-test {x = x} p i = mapT (p i)
+    cong-type : {x : G.Carrier} → (p : (x , TA) ≡ (x , TA)) → PathP (λ i → type (fst (p i)) (snd (p i))) (mapT (x , TA)) (mapT (x , TA))
+    cong-type {x = x} p i = mapT (p i)
 
     neutralMap : B²prod G PA .B².Carrier → G.Carrier
     neutralMap (x , t) = contrT x t .fst .fst
@@ -242,5 +238,23 @@ trivialB² = BtrivialGroup , λ y → sym (uaB² _ (b²equiv (λ _ → tt) (grou
   module tests where
     open neutral PA
     coherence : congLink (B².lnk (B²prod PA PA)) PA.lnk neutralMap ≡ Hom+ A
-    coherence = {!!}
--}
+    coherence = congLink-carac _ _ _ (TA , TA) ∙ groupHomEq (funExt λ q →
+      (PA.e (neutralMap (TA , TA)) ∘ cong neutralMap ∘ invEq (PA².eq (TA , TA))) q
+      --  ≡⟨ refl ⟩
+      --(PA.e (neutralMap (TA , TA)) ∘ cong neutralMap) (ΣPathP (invEq (PA.eq TA) (fst q) , invEq (PA.eq TA) (snd q)))
+        ≡⟨ {!!} ⟩
+      fst q A.+ snd q ∎) where
+      PA² = B²prod PA PA
+      module PA² = B² PA²
+      lemma1 : (q : _) → invEq (PA².eq (TA , TA)) q ≡ {!!}
+      lemma1 q =
+        invEq (PA².eq (TA , TA)) q
+          ≡⟨ {!!} ⟩
+        {!!} ∎
+        {-where
+        test0 : PA².Carrier
+        test0 = (TA , TA)
+        test1 : test0 ≡ test0
+        test1 = ΣPathP (invEq (PA.eq TA) (fst q) , test2) where
+          test2 : PathP (λ i → PA.Carrier) TA TA
+          test2 = invEq (PA.eq TA) (snd q)-}
