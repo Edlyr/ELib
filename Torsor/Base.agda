@@ -347,7 +347,6 @@ module _ (G : Group {ℓ}) where
 
   finalLemma : GroupEquiv ΩB G
   finalLemma = groupequiv (f , isEq) isHom
-    
     where
     preFinalLemma : GroupEquiv ΩB G
     preFinalLemma = compGroupEquiv eq1 (compGroupEquiv eq2 eq3)
@@ -368,3 +367,27 @@ module _ (G : Group {ℓ}) where
 
       isHom : isGroupHom ΩB G f
       isHom = transport (cong (isGroupHom ΩB G) (funExt equal)) (GroupEquiv.isHom preFinalLemma)
+
+  open Group G
+  finalLemmaAb : ((x y : ⟨ G ⟩) → x + y ≡ y + x) → GroupEquiv ΩB G
+  finalLemmaAb isAb = groupequiv (f , isEq) isHom where
+    eq3ab : GroupEquiv dual G
+    eq3ab = groupequiv (idEquiv _) λ x y → isAb y x
+    preFinalLemmaAb : GroupEquiv ΩB G
+    preFinalLemmaAb = compGroupEquiv eq1 (compGroupEquiv eq2 eq3ab)
+
+    f : ⟨ ΩB ⟩ → ⟨ G ⟩
+    f x = transport (cong Torsor.Carrier x) 0g
+
+    equal : (x : _) → GroupEquiv.eq preFinalLemmaAb .fst x ≡ f x
+    equal x =
+      GroupEquiv.eq preFinalLemmaAb .fst x ≡⟨ refl ⟩
+      TorsorEquiv.eq (pathToTorsorEquiv x) .fst 0g ≡⟨ cong (λ f₁ → fst f₁ 0g) (sym (carac-pathToTorsorEquiv x)) ⟩
+      f x ∎
+
+    abstract
+      isEq : isEquiv f
+      isEq = transport (cong isEquiv (funExt equal)) (GroupEquiv.eq preFinalLemmaAb .snd)
+
+      isHom : isGroupHom ΩB G f
+      isHom = transport (cong (isGroupHom ΩB G) (funExt equal)) (GroupEquiv.isHom preFinalLemmaAb)
