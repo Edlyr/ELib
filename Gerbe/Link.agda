@@ -61,9 +61,12 @@ trivialLink G x₀ = link (λ x → s x x₀) (islink (λ x → isEquiv-s x x₀
 
 makeLink-pnt : {G : Gerbe {ℓ}} {A : AbGroup {ℓ'}} {x₀ : ⟨ G ⟩} → AbGroupEquiv (π G x₀) A → Link G A
 makeLink-pnt {G = G} {A = A} {x₀ = x₀} f = link (λ x → GroupEquiv.eq (e x) .fst)
-  (islink (λ x → GroupEquiv.eq (e x) .snd) (λ x → GroupEquiv.isHom (e x))) where
+  (islink (λ x → GroupEquiv.eq (e x) .snd) is-hom) where
   e : (x : ⟨ G ⟩) → AbGroupEquiv (π G x) A
   e x = compGroupEquiv (S.s-groupEquiv G x x₀) f
+  abstract
+    is-hom : (x : ⟨ G ⟩) → isGroupHom (GRP (π G x)) (GRP A) (GroupEquiv.eq (e x) .fst)
+    is-hom = (λ x → GroupEquiv.isHom (e x))
 
 congHom : ∀ (G : Gerbe {ℓ}) (H : Gerbe {ℓ'}) (f : ⟨ G ⟩ → ⟨ H ⟩) (x : ⟨ G ⟩) → AbGroupHom (π G x) (π H (f x))
 congHom G H f x = grouphom (cong f) (cong-∙ f)
